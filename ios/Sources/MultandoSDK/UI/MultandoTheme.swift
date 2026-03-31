@@ -5,7 +5,7 @@ public enum MultandoTheme {
 
     // MARK: - Brand Colors
 
-    /// Primary brand blue (#3B5EEF).
+    /// Primary brand blue (#E63946).
     public static let primary = Color(red: 0x3B / 255.0, green: 0x5E / 255.0, blue: 0xEF / 255.0)
 
     /// Success green (#10B981).
