@@ -1,10 +1,5 @@
-import 'package:json_annotation/json_annotation.dart';
-
 import 'enums.dart';
 
-part 'evidence.g.dart';
-
-@JsonSerializable(fieldRename: FieldRename.snake)
 class EvidenceCreate {
   const EvidenceCreate({
     required this.type,
@@ -12,18 +7,28 @@ class EvidenceCreate {
     required this.mimeType,
   });
 
-  factory EvidenceCreate.fromJson(Map<String, dynamic> json) =>
-      _$EvidenceCreateFromJson(json);
+  factory EvidenceCreate.fromJson(Map<String, dynamic> json) {
+    return EvidenceCreate(
+      type: EvidenceType.values.firstWhere(
+        (e) => e.value == json['type'],
+        orElse: () => EvidenceType.photo,
+      ),
+      url: json['url'] as String,
+      mimeType: json['mime_type'] as String,
+    );
+  }
 
   final EvidenceType type;
   final String url;
-  @JsonKey(name: 'mime_type')
   final String mimeType;
 
-  Map<String, dynamic> toJson() => _$EvidenceCreateToJson(this);
+  Map<String, dynamic> toJson() => {
+        'type': type.value,
+        'url': url,
+        'mime_type': mimeType,
+      };
 }
 
-@JsonSerializable(fieldRename: FieldRename.snake)
 class EvidenceResponse {
   const EvidenceResponse({
     required this.id,
@@ -34,18 +39,33 @@ class EvidenceResponse {
     required this.createdAt,
   });
 
-  factory EvidenceResponse.fromJson(Map<String, dynamic> json) =>
-      _$EvidenceResponseFromJson(json);
+  factory EvidenceResponse.fromJson(Map<String, dynamic> json) {
+    return EvidenceResponse(
+      id: json['id'] as String,
+      reportId: json['report_id'] as String,
+      type: EvidenceType.values.firstWhere(
+        (e) => e.value == json['type'],
+        orElse: () => EvidenceType.photo,
+      ),
+      url: json['url'] as String,
+      mimeType: json['mime_type'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
 
   final String id;
-  @JsonKey(name: 'report_id')
   final String reportId;
   final EvidenceType type;
   final String url;
-  @JsonKey(name: 'mime_type')
   final String mimeType;
-  @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
-  Map<String, dynamic> toJson() => _$EvidenceResponseToJson(this);
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'report_id': reportId,
+        'type': type.value,
+        'url': url,
+        'mime_type': mimeType,
+        'created_at': createdAt.toIso8601String(),
+      };
 }

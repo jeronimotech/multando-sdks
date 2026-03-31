@@ -21,7 +21,7 @@ class OfflineQueue {
   final MultandoHttpClient _httpClient;
   final Connectivity _connectivity;
   Box<String>? _box;
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+  StreamSubscription<ConnectivityResult>? _connectivitySub;
   bool _flushing = false;
 
   /// Number of items currently waiting in the queue.
@@ -35,10 +35,8 @@ class OfflineQueue {
       _box = Hive.box<String>(_boxName);
     }
 
-    _connectivitySub = _connectivity.onConnectivityChanged.listen((results) {
-      final hasConnection =
-          results.any((r) => r != ConnectivityResult.none);
-      if (hasConnection) {
+    _connectivitySub = _connectivity.onConnectivityChanged.listen((result) {
+      if (result != ConnectivityResult.none) {
         flush();
       }
     });

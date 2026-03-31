@@ -1,17 +1,17 @@
-import 'package:json_annotation/json_annotation.dart';
-
-part 'verification.g.dart';
-
-@JsonSerializable(fieldRename: FieldRename.snake)
 class RejectRequest {
   const RejectRequest({
     required this.reason,
   });
 
-  factory RejectRequest.fromJson(Map<String, dynamic> json) =>
-      _$RejectRequestFromJson(json);
+  factory RejectRequest.fromJson(Map<String, dynamic> json) {
+    return RejectRequest(
+      reason: json['reason'] as String,
+    );
+  }
 
   final String reason;
 
-  Map<String, dynamic> toJson() => _$RejectRequestToJson(this);
+  Map<String, dynamic> toJson() => {
+        'reason': reason,
+      };
 }

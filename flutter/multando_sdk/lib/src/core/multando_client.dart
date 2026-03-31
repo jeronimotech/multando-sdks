@@ -5,6 +5,7 @@ import 'package:hive/hive.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/blockchain_service.dart';
+import '../services/chat_service.dart';
 import '../services/evidence_service.dart';
 import '../services/infraction_service.dart';
 import '../services/report_service.dart';
@@ -59,6 +60,7 @@ class MultandoClient {
   late VehicleTypeService _vehicleTypeService;
   late VerificationService _verificationService;
   late BlockchainService _blockchainService;
+  late ChatService _chatService;
 
   MultandoEventCallback? _onEvent;
   UserProfile? _currentUser;
@@ -122,6 +124,11 @@ class MultandoClient {
     return _blockchainService;
   }
 
+  ChatService get chat {
+    _ensureInitialized();
+    return _chatService;
+  }
+
   // ---------------------------------------------------------------------------
   // Lifecycle
   // ---------------------------------------------------------------------------
@@ -180,6 +187,7 @@ class MultandoClient {
     _vehicleTypeService = VehicleTypeService(httpClient: _httpClient);
     _verificationService = VerificationService(httpClient: _httpClient);
     _blockchainService = BlockchainService(httpClient: _httpClient);
+    _chatService = ChatService(httpClient: _httpClient);
 
     _initialized = true;
 

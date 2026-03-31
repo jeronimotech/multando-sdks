@@ -126,9 +126,7 @@ class _SecureCameraWidgetState extends State<SecureCameraWidget> {
 
       // GPS
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-        ),
+        desiredAccuracy: LocationAccuracy.high,
       );
 
       // Photo

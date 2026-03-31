@@ -10,6 +10,7 @@ import { InfractionService } from '../services/infractionService';
 import { VehicleTypeService } from '../services/vehicleTypeService';
 import { VerificationService } from '../services/verificationService';
 import { BlockchainService } from '../services/blockchainService';
+import { ChatService } from '../services/chatService';
 import { UserProfile } from '../models/user';
 
 export type MultandoEventType =
@@ -38,6 +39,7 @@ export class MultandoClient {
   public readonly vehicleTypes: VehicleTypeService;
   public readonly verification: VerificationService;
   public readonly blockchain: BlockchainService;
+  public readonly chat: ChatService;
 
   constructor(config: MultandoConfig) {
     this.config = resolveConfig(config);
@@ -65,6 +67,7 @@ export class MultandoClient {
     this.vehicleTypes = new VehicleTypeService(httpClient, this.logger);
     this.verification = new VerificationService(httpClient, this.logger);
     this.blockchain = new BlockchainService(httpClient, this.logger);
+    this.chat = new ChatService(httpClient, this.logger);
   }
 
   async initialize(): Promise<void> {

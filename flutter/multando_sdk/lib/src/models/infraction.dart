@@ -1,10 +1,5 @@
-import 'package:json_annotation/json_annotation.dart';
-
 import 'enums.dart';
 
-part 'infraction.g.dart';
-
-@JsonSerializable(fieldRename: FieldRename.snake)
 class InfractionResponse {
   const InfractionResponse({
     required this.id,
@@ -17,20 +12,42 @@ class InfractionResponse {
     required this.isActive,
   });
 
-  factory InfractionResponse.fromJson(Map<String, dynamic> json) =>
-      _$InfractionResponseFromJson(json);
+  factory InfractionResponse.fromJson(Map<String, dynamic> json) {
+    return InfractionResponse(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String,
+      category: InfractionCategory.values.firstWhere(
+        (e) => e.value == json['category'],
+        orElse: () => InfractionCategory.other,
+      ),
+      severity: InfractionSeverity.values.firstWhere(
+        (e) => e.value == json['severity'],
+        orElse: () => InfractionSeverity.low,
+      ),
+      basePoints: json['base_points'] as int,
+      fineAmount: (json['fine_amount'] as num?)?.toDouble(),
+      isActive: json['is_active'] as bool,
+    );
+  }
 
   final String id;
   final String name;
   final String description;
   final InfractionCategory category;
   final InfractionSeverity severity;
-  @JsonKey(name: 'base_points')
   final int basePoints;
-  @JsonKey(name: 'fine_amount')
   final double? fineAmount;
-  @JsonKey(name: 'is_active')
   final bool isActive;
 
-  Map<String, dynamic> toJson() => _$InfractionResponseToJson(this);
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'description': description,
+        'category': category.value,
+        'severity': severity.value,
+        'base_points': basePoints,
+        if (fineAmount != null) 'fine_amount': fineAmount,
+        'is_active': isActive,
+      };
 }

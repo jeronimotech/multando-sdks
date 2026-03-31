@@ -1,0 +1,117 @@
+import Foundation
+
+/// A conversation with the Multando AI assistant.
+public struct Conversation: Codable, Sendable {
+    public let id: Int
+    public let status: String
+    public let createdAt: String
+    public let updatedAt: String
+    public var messages: [ChatMessage]
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case status
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case messages
+    }
+}
+
+/// A single message in a conversation.
+public struct ChatMessage: Codable, Sendable, Identifiable {
+    public let id: Int
+    public let conversationId: Int
+    public let direction: String
+    public let content: String?
+    public let messageType: String
+    public let createdAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case conversationId = "conversation_id"
+        case direction
+        case content
+        case messageType = "message_type"
+        case createdAt = "created_at"
+    }
+
+    /// Whether this message was sent by the user.
+    public var isOutbound: Bool { direction == "outbound" }
+}
+
+/// Payload for sending a message to the AI.
+public struct SendMessageRequest: Codable, Sendable {
+    public let content: String
+    public let imageBase64: String?
+    public let imageMediaType: String?
+
+    public init(content: String, imageBase64: String? = nil, imageMediaType: String? = nil) {
+        self.content = content
+        self.imageBase64 = imageBase64
+        self.imageMediaType = imageMediaType
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case content
+        case imageBase64 = "image_base64"
+        case imageMediaType = "image_media_type"
+    }
+}
+
+/// Response from the AI after sending a message.
+public struct ChatResponse: Codable, Sendable {
+    public let message: ChatMessage
+    public let toolCalls: [[String: AnyCodable]]
+
+    enum CodingKeys: String, CodingKey {
+        case message
+        case toolCalls = "tool_calls"
+    }
+}
+
+/// A type-erased Codable wrapper for handling arbitrary JSON values in tool calls.
+public struct AnyCodable: Codable, Sendable {
+    public let value: Any?
+
+    public init(_ value: Any?) {
+        self.value = value
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            value = nil
+        } else if let boolVal = try? container.decode(Bool.self) {
+            value = boolVal
+        } else if let intVal = try? container.decode(Int.self) {
+            value = intVal
+        } else if let doubleVal = try? container.decode(Double.self) {
+            value = doubleVal
+        } else if let stringVal = try? container.decode(String.self) {
+            value = stringVal
+        } else if let arrayVal = try? container.decode([AnyCodable].self) {
+            value = arrayVal.map { $0.value }
+        } else if let dictVal = try? container.decode([String: AnyCodable].self) {
+            value = dictVal.mapValues { $0.value }
+        } else {
+            value = nil
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        if value == nil {
+            try container.encodeNil()
+        } else if let boolVal = value as? Bool {
+            try container.encode(boolVal)
+        } else if let intVal = value as? Int {
+            try container.encode(intVal)
+        } else if let doubleVal = value as? Double {
+            try container.encode(doubleVal)
+        } else if let stringVal = value as? String {
+            try container.encode(stringVal)
+        } else {
+            try container.encodeNil()
+        }
+    }
+}

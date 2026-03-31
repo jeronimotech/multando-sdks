@@ -1,46 +1,59 @@
-import 'package:json_annotation/json_annotation.dart';
-
-part 'auth.g.dart';
-
-@JsonSerializable(fieldRename: FieldRename.snake)
 class RegisterRequest {
   const RegisterRequest({
     required this.email,
     required this.password,
-    required this.fullName,
+    required this.username,
+    required this.displayName,
     this.phoneNumber,
   });
 
-  factory RegisterRequest.fromJson(Map<String, dynamic> json) =>
-      _$RegisterRequestFromJson(json);
+  factory RegisterRequest.fromJson(Map<String, dynamic> json) {
+    return RegisterRequest(
+      email: json['email'] as String,
+      password: json['password'] as String,
+      username: json['username'] as String,
+      displayName: json['display_name'] as String,
+      phoneNumber: json['phone_number'] as String?,
+    );
+  }
 
   final String email;
   final String password;
-  @JsonKey(name: 'full_name')
-  final String fullName;
-  @JsonKey(name: 'phone_number')
+  final String username;
+  final String displayName;
   final String? phoneNumber;
 
-  Map<String, dynamic> toJson() => _$RegisterRequestToJson(this);
+  Map<String, dynamic> toJson() => {
+        'email': email,
+        'password': password,
+        'username': username,
+        'display_name': displayName,
+        if (phoneNumber != null) 'phone_number': phoneNumber,
+      };
 }
 
-@JsonSerializable(fieldRename: FieldRename.snake)
 class LoginRequest {
   const LoginRequest({
     required this.email,
     required this.password,
   });
 
-  factory LoginRequest.fromJson(Map<String, dynamic> json) =>
-      _$LoginRequestFromJson(json);
+  factory LoginRequest.fromJson(Map<String, dynamic> json) {
+    return LoginRequest(
+      email: json['email'] as String,
+      password: json['password'] as String,
+    );
+  }
 
   final String email;
   final String password;
 
-  Map<String, dynamic> toJson() => _$LoginRequestToJson(this);
+  Map<String, dynamic> toJson() => {
+        'email': email,
+        'password': password,
+      };
 }
 
-@JsonSerializable(fieldRename: FieldRename.snake)
 class TokenResponse {
   const TokenResponse({
     required this.accessToken,
@@ -49,49 +62,64 @@ class TokenResponse {
     required this.expiresIn,
   });
 
-  factory TokenResponse.fromJson(Map<String, dynamic> json) =>
-      _$TokenResponseFromJson(json);
+  factory TokenResponse.fromJson(Map<String, dynamic> json) {
+    return TokenResponse(
+      accessToken: json['access_token'] as String,
+      refreshToken: json['refresh_token'] as String,
+      tokenType: json['token_type'] as String,
+      expiresIn: json['expires_in'] as int,
+    );
+  }
 
-  @JsonKey(name: 'access_token')
   final String accessToken;
-  @JsonKey(name: 'refresh_token')
   final String refreshToken;
-  @JsonKey(name: 'token_type')
   final String tokenType;
-  @JsonKey(name: 'expires_in')
   final int expiresIn;
 
-  Map<String, dynamic> toJson() => _$TokenResponseToJson(this);
+  Map<String, dynamic> toJson() => {
+        'access_token': accessToken,
+        'refresh_token': refreshToken,
+        'token_type': tokenType,
+        'expires_in': expiresIn,
+      };
 }
 
-@JsonSerializable(fieldRename: FieldRename.snake)
 class RefreshRequest {
   const RefreshRequest({
     required this.refreshToken,
   });
 
-  factory RefreshRequest.fromJson(Map<String, dynamic> json) =>
-      _$RefreshRequestFromJson(json);
+  factory RefreshRequest.fromJson(Map<String, dynamic> json) {
+    return RefreshRequest(
+      refreshToken: json['refresh_token'] as String,
+    );
+  }
 
-  @JsonKey(name: 'refresh_token')
   final String refreshToken;
 
-  Map<String, dynamic> toJson() => _$RefreshRequestToJson(this);
+  Map<String, dynamic> toJson() => {
+        'refresh_token': refreshToken,
+      };
 }
 
-@JsonSerializable(fieldRename: FieldRename.snake)
 class WalletLinkRequest {
   const WalletLinkRequest({
     required this.walletAddress,
     required this.signature,
   });
 
-  factory WalletLinkRequest.fromJson(Map<String, dynamic> json) =>
-      _$WalletLinkRequestFromJson(json);
+  factory WalletLinkRequest.fromJson(Map<String, dynamic> json) {
+    return WalletLinkRequest(
+      walletAddress: json['wallet_address'] as String,
+      signature: json['signature'] as String,
+    );
+  }
 
-  @JsonKey(name: 'wallet_address')
   final String walletAddress;
   final String signature;
 
-  Map<String, dynamic> toJson() => _$WalletLinkRequestToJson(this);
+  Map<String, dynamic> toJson() => {
+        'wallet_address': walletAddress,
+        'signature': signature,
+      };
 }

@@ -1,11 +1,6 @@
-import 'package:json_annotation/json_annotation.dart';
-
 import 'enums.dart';
 import 'evidence.dart';
 
-part 'report.g.dart';
-
-@JsonSerializable(fieldRename: FieldRename.snake)
 class LocationData {
   const LocationData({
     required this.latitude,
@@ -17,8 +12,17 @@ class LocationData {
     this.postalCode,
   });
 
-  factory LocationData.fromJson(Map<String, dynamic> json) =>
-      _$LocationDataFromJson(json);
+  factory LocationData.fromJson(Map<String, dynamic> json) {
+    return LocationData(
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
+      address: json['address'] as String?,
+      city: json['city'] as String?,
+      state: json['state'] as String?,
+      country: json['country'] as String?,
+      postalCode: json['postal_code'] as String?,
+    );
+  }
 
   final double latitude;
   final double longitude;
@@ -26,13 +30,19 @@ class LocationData {
   final String? city;
   final String? state;
   final String? country;
-  @JsonKey(name: 'postal_code')
   final String? postalCode;
 
-  Map<String, dynamic> toJson() => _$LocationDataToJson(this);
+  Map<String, dynamic> toJson() => {
+        'latitude': latitude,
+        'longitude': longitude,
+        if (address != null) 'address': address,
+        if (city != null) 'city': city,
+        if (state != null) 'state': state,
+        if (country != null) 'country': country,
+        if (postalCode != null) 'postal_code': postalCode,
+      };
 }
 
-@JsonSerializable(fieldRename: FieldRename.snake)
 class ReportCreate {
   const ReportCreate({
     required this.infractionId,
@@ -44,25 +54,42 @@ class ReportCreate {
     this.source = ReportSource.sdk,
   });
 
-  factory ReportCreate.fromJson(Map<String, dynamic> json) =>
-      _$ReportCreateFromJson(json);
+  factory ReportCreate.fromJson(Map<String, dynamic> json) {
+    return ReportCreate(
+      infractionId: json['infraction_id'] as String,
+      plateNumber: json['plate_number'] as String,
+      location: LocationData.fromJson(json['location'] as Map<String, dynamic>),
+      vehicleTypeId: json['vehicle_type_id'] as String?,
+      description: json['description'] as String?,
+      occurredAt: json['occurred_at'] != null
+          ? DateTime.parse(json['occurred_at'] as String)
+          : null,
+      source: ReportSource.values.firstWhere(
+        (e) => e.value == json['source'],
+        orElse: () => ReportSource.sdk,
+      ),
+    );
+  }
 
-  @JsonKey(name: 'infraction_id')
   final String infractionId;
-  @JsonKey(name: 'plate_number')
   final String plateNumber;
   final LocationData location;
-  @JsonKey(name: 'vehicle_type_id')
   final String? vehicleTypeId;
   final String? description;
-  @JsonKey(name: 'occurred_at')
   final DateTime? occurredAt;
   final ReportSource source;
 
-  Map<String, dynamic> toJson() => _$ReportCreateToJson(this);
+  Map<String, dynamic> toJson() => {
+        'infraction_id': infractionId,
+        'plate_number': plateNumber,
+        'location': location.toJson(),
+        if (vehicleTypeId != null) 'vehicle_type_id': vehicleTypeId,
+        if (description != null) 'description': description,
+        if (occurredAt != null) 'occurred_at': occurredAt!.toIso8601String(),
+        'source': source.value,
+      };
 }
 
-@JsonSerializable(fieldRename: FieldRename.snake)
 class ReportDetail {
   const ReportDetail({
     required this.id,
@@ -82,38 +109,76 @@ class ReportDetail {
     this.rejectionCount,
   });
 
-  factory ReportDetail.fromJson(Map<String, dynamic> json) =>
-      _$ReportDetailFromJson(json);
+  factory ReportDetail.fromJson(Map<String, dynamic> json) {
+    return ReportDetail(
+      id: json['id'] as String,
+      infractionId: json['infraction_id'] as String,
+      plateNumber: json['plate_number'] as String,
+      location: LocationData.fromJson(json['location'] as Map<String, dynamic>),
+      status: ReportStatus.values.firstWhere(
+        (e) => e.value == json['status'],
+        orElse: () => ReportStatus.draft,
+      ),
+      source: ReportSource.values.firstWhere(
+        (e) => e.value == json['source'],
+        orElse: () => ReportSource.sdk,
+      ),
+      reporterId: json['reporter_id'] as String,
+      vehicleTypeId: json['vehicle_type_id'] as String?,
+      description: json['description'] as String?,
+      occurredAt: json['occurred_at'] != null
+          ? DateTime.parse(json['occurred_at'] as String)
+          : null,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : null,
+      evidence: json['evidence'] != null
+          ? (json['evidence'] as List)
+              .map((e) =>
+                  EvidenceResponse.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : const [],
+      verificationCount: json['verification_count'] as int?,
+      rejectionCount: json['rejection_count'] as int?,
+    );
+  }
 
   final String id;
-  @JsonKey(name: 'infraction_id')
   final String infractionId;
-  @JsonKey(name: 'plate_number')
   final String plateNumber;
   final LocationData location;
   final ReportStatus status;
   final ReportSource source;
-  @JsonKey(name: 'reporter_id')
   final String reporterId;
-  @JsonKey(name: 'vehicle_type_id')
   final String? vehicleTypeId;
   final String? description;
-  @JsonKey(name: 'occurred_at')
   final DateTime? occurredAt;
-  @JsonKey(name: 'created_at')
   final DateTime createdAt;
-  @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
   final List<EvidenceResponse> evidence;
-  @JsonKey(name: 'verification_count')
   final int? verificationCount;
-  @JsonKey(name: 'rejection_count')
   final int? rejectionCount;
 
-  Map<String, dynamic> toJson() => _$ReportDetailToJson(this);
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'infraction_id': infractionId,
+        'plate_number': plateNumber,
+        'location': location.toJson(),
+        'status': status.value,
+        'source': source.value,
+        'reporter_id': reporterId,
+        if (vehicleTypeId != null) 'vehicle_type_id': vehicleTypeId,
+        if (description != null) 'description': description,
+        if (occurredAt != null) 'occurred_at': occurredAt!.toIso8601String(),
+        'created_at': createdAt.toIso8601String(),
+        if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
+        'evidence': evidence.map((e) => e.toJson()).toList(),
+        if (verificationCount != null) 'verification_count': verificationCount,
+        if (rejectionCount != null) 'rejection_count': rejectionCount,
+      };
 }
 
-@JsonSerializable(fieldRename: FieldRename.snake)
 class ReportSummary {
   const ReportSummary({
     required this.id,
@@ -125,24 +190,43 @@ class ReportSummary {
     this.description,
   });
 
-  factory ReportSummary.fromJson(Map<String, dynamic> json) =>
-      _$ReportSummaryFromJson(json);
+  factory ReportSummary.fromJson(Map<String, dynamic> json) {
+    return ReportSummary(
+      id: json['id'] as String,
+      infractionId: json['infraction_id'] as String,
+      plateNumber: json['plate_number'] as String,
+      status: ReportStatus.values.firstWhere(
+        (e) => e.value == json['status'],
+        orElse: () => ReportStatus.draft,
+      ),
+      source: ReportSource.values.firstWhere(
+        (e) => e.value == json['source'],
+        orElse: () => ReportSource.sdk,
+      ),
+      createdAt: DateTime.parse(json['created_at'] as String),
+      description: json['description'] as String?,
+    );
+  }
 
   final String id;
-  @JsonKey(name: 'infraction_id')
   final String infractionId;
-  @JsonKey(name: 'plate_number')
   final String plateNumber;
   final ReportStatus status;
   final ReportSource source;
-  @JsonKey(name: 'created_at')
   final DateTime createdAt;
   final String? description;
 
-  Map<String, dynamic> toJson() => _$ReportSummaryToJson(this);
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'infraction_id': infractionId,
+        'plate_number': plateNumber,
+        'status': status.value,
+        'source': source.value,
+        'created_at': createdAt.toIso8601String(),
+        if (description != null) 'description': description,
+      };
 }
 
-@JsonSerializable(fieldRename: FieldRename.snake)
 class ReportList {
   const ReportList({
     required this.items,
@@ -152,16 +236,34 @@ class ReportList {
     required this.totalPages,
   });
 
-  factory ReportList.fromJson(Map<String, dynamic> json) =>
-      _$ReportListFromJson(json);
+  factory ReportList.fromJson(Map<String, dynamic> json) {
+    final total = json['total'] as int? ?? 0;
+    final pageSize = json['page_size'] as int? ?? 20;
+    final totalPages = json['total_pages'] as int?
+        ?? json['pages'] as int?
+        ?? (pageSize > 0 ? (total + pageSize - 1) ~/ pageSize : 0);
+    return ReportList(
+      items: (json['items'] as List? ?? [])
+          .map((e) => ReportSummary.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      total: total,
+      page: json['page'] as int? ?? 1,
+      pageSize: pageSize,
+      totalPages: totalPages,
+    );
+  }
 
   final List<ReportSummary> items;
   final int total;
   final int page;
-  @JsonKey(name: 'page_size')
   final int pageSize;
-  @JsonKey(name: 'total_pages')
   final int totalPages;
 
-  Map<String, dynamic> toJson() => _$ReportListToJson(this);
+  Map<String, dynamic> toJson() => {
+        'items': items.map((e) => e.toJson()).toList(),
+        'total': total,
+        'page': page,
+        'page_size': pageSize,
+        'total_pages': totalPages,
+      };
 }

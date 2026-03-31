@@ -103,8 +103,22 @@ export type { UseBlockchainResult } from './hooks/useBlockchain';
 export { useOfflineQueue } from './hooks/useOfflineQueue';
 export type { UseOfflineQueueResult } from './hooks/useOfflineQueue';
 
+// Models - Conversation
+export type {
+  Conversation,
+  ChatMessage,
+  SendMessageRequest,
+  ChatResponse,
+} from './models/conversation';
+
+// Services - Chat
+export { ChatService } from './services/chatService';
+export type { ConversationListParams } from './services/chatService';
+
 // Components
 export { MultandoProvider } from './components/MultandoProvider';
 export type { MultandoProviderProps } from './components/MultandoProvider';
 export { ReportForm } from './components/ReportForm';
 export type { ReportFormProps } from './components/ReportForm';
+export { MultandoChat } from './components/MultandoChat';
+export type { MultandoChatProps } from './components/MultandoChat';

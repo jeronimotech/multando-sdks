@@ -199,7 +199,7 @@ class _ReportFormState extends State<ReportForm> {
         Step(
           title: Text(_t('step3_title')),
           isActive: _currentStep >= 2,
-          state: _submitting ? StepState.loading : StepState.indexed,
+          state: _submitting ? StepState.editing : StepState.indexed,
           content: _buildStep3(),
         ),
       ],

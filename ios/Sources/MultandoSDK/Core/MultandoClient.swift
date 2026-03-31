@@ -19,6 +19,7 @@ public actor MultandoClient {
     public nonisolated let vehicleTypes: VehicleTypeService
     public nonisolated let verification: VerificationService
     public nonisolated let blockchain: BlockchainService
+    public nonisolated let chat: ChatService
 
     // MARK: - Init
 
@@ -44,6 +45,7 @@ public actor MultandoClient {
         self.vehicleTypes = VehicleTypeService(httpClient: httpClient)
         self.verification = VerificationService(httpClient: httpClient)
         self.blockchain = BlockchainService(httpClient: httpClient)
+        self.chat = ChatService(httpClient: httpClient)
     }
 
     // MARK: - Convenience

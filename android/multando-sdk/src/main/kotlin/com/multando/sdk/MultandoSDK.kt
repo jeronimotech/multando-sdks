@@ -1,6 +1,7 @@
 package com.multando.sdk
 
 import android.content.Context
+import com.multando.sdk.chat.ChatService
 import com.multando.sdk.core.MultandoClient
 import com.multando.sdk.core.MultandoConfig
 import com.multando.sdk.services.*
@@ -29,6 +30,7 @@ object MultandoSDK {
     val vehicleTypes: VehicleTypeService get() = client.vehicleTypes
     val verification: VerificationService get() = client.verification
     val blockchain: BlockchainService get() = client.blockchain
+    val chat: ChatService get() = client.chat
 
     /**
      * Initialize the SDK. Must be called before accessing any service.

@@ -1,72 +1,112 @@
-import 'package:json_annotation/json_annotation.dart';
+/// Safely parse a value that may be num or String to double.
+double? _toDouble(dynamic v) {
+  if (v == null) return null;
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v);
+  return null;
+}
 
-part 'user.g.dart';
+/// Safely parse a value that may be num or String to int.
+int _toInt(dynamic v, [int fallback = 0]) {
+  if (v == null) return fallback;
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v) ?? fallback;
+  return fallback;
+}
 
-@JsonSerializable(fieldRename: FieldRename.snake)
 class UserProfile {
   const UserProfile({
     required this.id,
     required this.email,
-    required this.fullName,
+    required this.username,
+    required this.displayName,
     this.phoneNumber,
     this.walletAddress,
-    required this.isActive,
+    this.avatarUrl,
+    this.points = 0,
     required this.isVerified,
-    required this.createdAt,
-    this.updatedAt,
-    this.reportsCount,
-    this.verifiedReportsCount,
     this.reputationScore,
+    required this.createdAt,
   });
 
-  factory UserProfile.fromJson(Map<String, dynamic> json) =>
-      _$UserProfileFromJson(json);
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
+    return UserProfile(
+      id: json['id'] as String,
+      email: json['email'] as String,
+      username: json['username'] as String,
+      displayName: json['display_name'] as String,
+      phoneNumber: json['phone_number'] as String?,
+      walletAddress: json['wallet_address'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
+      points: _toInt(json['points']),
+      isVerified: json['is_verified'] as bool? ?? false,
+      reputationScore: _toDouble(json['reputation_score']),
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
 
   final String id;
   final String email;
-  @JsonKey(name: 'full_name')
-  final String fullName;
-  @JsonKey(name: 'phone_number')
+  final String username;
+  final String displayName;
   final String? phoneNumber;
-  @JsonKey(name: 'wallet_address')
   final String? walletAddress;
-  @JsonKey(name: 'is_active')
-  final bool isActive;
-  @JsonKey(name: 'is_verified')
+  final String? avatarUrl;
+  final int points;
   final bool isVerified;
-  @JsonKey(name: 'created_at')
-  final DateTime createdAt;
-  @JsonKey(name: 'updated_at')
-  final DateTime? updatedAt;
-  @JsonKey(name: 'reports_count')
-  final int? reportsCount;
-  @JsonKey(name: 'verified_reports_count')
-  final int? verifiedReportsCount;
-  @JsonKey(name: 'reputation_score')
   final double? reputationScore;
+  final DateTime createdAt;
 
-  Map<String, dynamic> toJson() => _$UserProfileToJson(this);
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'email': email,
+        'username': username,
+        'display_name': displayName,
+        if (phoneNumber != null) 'phone_number': phoneNumber,
+        if (walletAddress != null) 'wallet_address': walletAddress,
+        if (avatarUrl != null) 'avatar_url': avatarUrl,
+        'points': points,
+        'is_verified': isVerified,
+        if (reputationScore != null) 'reputation_score': reputationScore,
+        'created_at': createdAt.toIso8601String(),
+      };
 }
 
-@JsonSerializable(fieldRename: FieldRename.snake)
 class UserPublic {
   const UserPublic({
     required this.id,
-    required this.fullName,
+    required this.username,
+    required this.displayName,
+    this.avatarUrl,
+    this.points = 0,
     this.reputationScore,
-    this.verifiedReportsCount,
   });
 
-  factory UserPublic.fromJson(Map<String, dynamic> json) =>
-      _$UserPublicFromJson(json);
+  factory UserPublic.fromJson(Map<String, dynamic> json) {
+    return UserPublic(
+      id: json['id'] as String,
+      username: json['username'] as String,
+      displayName: json['display_name'] as String,
+      avatarUrl: json['avatar_url'] as String?,
+      points: _toInt(json['points']),
+      reputationScore: _toDouble(json['reputation_score']),
+    );
+  }
 
   final String id;
-  @JsonKey(name: 'full_name')
-  final String fullName;
-  @JsonKey(name: 'reputation_score')
+  final String username;
+  final String displayName;
+  final String? avatarUrl;
+  final int points;
   final double? reputationScore;
-  @JsonKey(name: 'verified_reports_count')
-  final int? verifiedReportsCount;
 
-  Map<String, dynamic> toJson() => _$UserPublicToJson(this);
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'username': username,
+        'display_name': displayName,
+        if (avatarUrl != null) 'avatar_url': avatarUrl,
+        'points': points,
+        if (reputationScore != null) 'reputation_score': reputationScore,
+      };
 }

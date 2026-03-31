@@ -31,14 +31,15 @@ class VerificationService {
     int page = 1,
     int pageSize = 20,
   }) async {
-    final response = await _http.get<List<dynamic>>(
+    final response = await _http.get<Map<String, dynamic>>(
       '/verification/queue',
       queryParameters: {
         'page': page,
         'page_size': pageSize,
       },
     );
-    return response.data!
+    final items = response.data!['items'] as List? ?? [];
+    return items
         .cast<Map<String, dynamic>>()
         .map(ReportSummary.fromJson)
         .toList();

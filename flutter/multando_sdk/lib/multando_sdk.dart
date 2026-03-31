@@ -8,6 +8,7 @@ export 'src/core/multando_client.dart';
 // Models
 export 'src/models/auth.dart';
 export 'src/models/blockchain.dart';
+export 'src/models/conversation.dart';
 export 'src/models/enums.dart';
 export 'src/models/error.dart';
 export 'src/models/evidence.dart';
@@ -20,6 +21,7 @@ export 'src/models/verification.dart';
 // Services
 export 'src/services/auth_service.dart';
 export 'src/services/blockchain_service.dart';
+export 'src/services/chat_service.dart';
 export 'src/services/evidence_service.dart';
 export 'src/services/infraction_service.dart';
 export 'src/services/report_service.dart';

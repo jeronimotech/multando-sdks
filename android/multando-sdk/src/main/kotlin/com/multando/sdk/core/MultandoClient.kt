@@ -1,6 +1,7 @@
 package com.multando.sdk.core
 
 import android.content.Context
+import com.multando.sdk.chat.ChatService
 import com.multando.sdk.models.UserProfile
 import com.multando.sdk.services.*
 
@@ -23,6 +24,7 @@ class MultandoClient internal constructor(
     val vehicleTypes = VehicleTypeService(httpClient)
     val verification = VerificationService(httpClient)
     val blockchain = BlockchainService(httpClient)
+    val chat = ChatService(httpClient)
 
     /** Whether the user currently has valid auth tokens stored. */
     val isAuthenticated: Boolean get() = authManager.isAuthenticated
