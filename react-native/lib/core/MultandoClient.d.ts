@@ -1,0 +1,40 @@
+import { MultandoConfig } from './config';
+import { AuthService } from '../services/authService';
+import { ReportService } from '../services/reportService';
+import { EvidenceService } from '../services/evidenceService';
+import { InfractionService } from '../services/infractionService';
+import { VehicleTypeService } from '../services/vehicleTypeService';
+import { VerificationService } from '../services/verificationService';
+import { BlockchainService } from '../services/blockchainService';
+import { UserProfile } from '../models/user';
+export type MultandoEventType = 'initialized' | 'auth_state_changed' | 'offline_queue_changed' | 'error';
+type MultandoEventListener = (event: MultandoEventType, data?: unknown) => void;
+export declare class MultandoClient {
+    private config;
+    private logger;
+    private authManager;
+    private offlineQueue;
+    private listeners;
+    private _initialized;
+    readonly auth: AuthService;
+    readonly reports: ReportService;
+    readonly evidence: EvidenceService;
+    readonly infractions: InfractionService;
+    readonly vehicleTypes: VehicleTypeService;
+    readonly verification: VerificationService;
+    readonly blockchain: BlockchainService;
+    constructor(config: MultandoConfig);
+    initialize(): Promise<void>;
+    get isAuthenticated(): boolean;
+    get currentUser(): UserProfile | null;
+    get offlineQueueCount(): number;
+    get offlineQueueItems(): ReadonlyArray<import('./offlineQueue').QueuedRequest>;
+    flushOfflineQueue(): Promise<void>;
+    removeFromOfflineQueue(id: string): Promise<void>;
+    get isInitialized(): boolean;
+    onEvent(listener: MultandoEventListener): () => void;
+    dispose(): void;
+    private emit;
+}
+export {};
+//# sourceMappingURL=MultandoClient.d.ts.map

@@ -1,0 +1,25 @@
+name: multando_sdk
+description: Flutter SDK for the Multando infraction reporting platform.
+version: 1.0.0
+homepage: https://multando.io
+repository: https://github.com/multando/flutter-sdk
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+  flutter: '>=3.16.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dio: ^5.4
+  flutter_secure_storage: ^9.0
+  hive: ^2.2
+  connectivity_plus: ^5.0
+  json_annotation: ^4.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  json_serializable: ^6.7
+  build_runner: ^2.4
+  flutter_lints: ^3.0

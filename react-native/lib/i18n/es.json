@@ -1,0 +1,101 @@
+{
+    "common": {
+        "loading": "Cargando...",
+        "error": "Ocurrio un error",
+        "retry": "Reintentar",
+        "cancel": "Cancelar",
+        "confirm": "Confirmar",
+        "submit": "Enviar",
+        "save": "Guardar",
+        "delete": "Eliminar",
+        "back": "Atras",
+        "next": "Siguiente",
+        "done": "Listo",
+        "close": "Cerrar",
+        "yes": "Si",
+        "no": "No",
+        "ok": "OK",
+        "required": "Requerido"
+    },
+    "auth": {
+        "login": "Iniciar Sesion",
+        "register": "Registrarse",
+        "logout": "Cerrar Sesion",
+        "email": "Correo Electronico",
+        "password": "Contrasena",
+        "fullName": "Nombre Completo",
+        "phoneNumber": "Numero de Telefono",
+        "forgotPassword": "Olvidaste tu contrasena?",
+        "noAccount": "No tienes cuenta?",
+        "hasAccount": "Ya tienes cuenta?",
+        "loginFailed": "Error al iniciar sesion. Verifica tus credenciales.",
+        "registerFailed": "Error al registrarse. Intenta de nuevo.",
+        "sessionExpired": "Tu sesion ha expirado. Inicia sesion de nuevo."
+    },
+    "report": {
+        "title": "Reportar Infraccion",
+        "plateNumber": "Numero de Placa",
+        "vehicleType": "Tipo de Vehiculo",
+        "infraction": "Tipo de Infraccion",
+        "description": "Descripcion",
+        "location": "Ubicacion",
+        "evidence": "Evidencia",
+        "stepCapture": "Capturar",
+        "stepConfirm": "Confirmar",
+        "stepSubmit": "Enviar",
+        "submitSuccess": "Reporte enviado exitosamente!",
+        "submitFailed": "Error al enviar el reporte.",
+        "submitQueued": "Reporte en cola para envio cuando haya conexion.",
+        "noReports": "No se encontraron reportes.",
+        "deleteConfirm": "Estas seguro de que deseas eliminar este reporte?",
+        "descriptionPlaceholder": "Describe lo que observaste..."
+    },
+    "evidence": {
+        "addPhoto": "Agregar Foto",
+        "addVideo": "Agregar Video",
+        "addDocument": "Agregar Documento",
+        "noEvidence": "Sin evidencia adjunta.",
+        "uploadFailed": "Error al subir la evidencia."
+    },
+    "verification": {
+        "title": "Cola de Verificacion",
+        "verify": "Verificar",
+        "reject": "Rechazar",
+        "rejectReason": "Razon del Rechazo",
+        "rejectDetails": "Detalles Adicionales",
+        "emptyQueue": "No hay reportes para verificar.",
+        "verifySuccess": "Reporte verificado exitosamente.",
+        "rejectSuccess": "Reporte rechazado."
+    },
+    "blockchain": {
+        "balance": "Balance",
+        "available": "Disponible",
+        "staked": "En Staking",
+        "pendingRewards": "Recompensas Pendientes",
+        "stake": "Hacer Staking",
+        "unstake": "Retirar Staking",
+        "claimRewards": "Reclamar Recompensas",
+        "transactions": "Transacciones",
+        "noTransactions": "No se encontraron transacciones.",
+        "stakingInfo": "Informacion de Staking",
+        "estimatedApy": "APY Estimado",
+        "lockPeriodEnds": "Fin del Periodo de Bloqueo"
+    },
+    "offline": {
+        "queueCount": "{{count}} elemento(s) en cola sin conexion",
+        "syncing": "Sincronizando datos sin conexion...",
+        "syncComplete": "Todos los datos sincronizados.",
+        "syncFailed": "Algunos elementos fallaron al sincronizar."
+    },
+    "validation": {
+        "emailRequired": "El correo electronico es requerido",
+        "emailInvalid": "Correo electronico invalido",
+        "passwordRequired": "La contrasena es requerida",
+        "passwordTooShort": "La contrasena debe tener al menos 8 caracteres",
+        "plateRequired": "El numero de placa es requerido",
+        "vehicleTypeRequired": "El tipo de vehiculo es requerido",
+        "infractionRequired": "El tipo de infraccion es requerido",
+        "descriptionRequired": "La descripcion es requerida",
+        "locationRequired": "La ubicacion es requerida"
+    }
+}

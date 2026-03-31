@@ -1,0 +1,101 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "submit": "Submit",
+    "save": "Save",
+    "delete": "Delete",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "required": "Required"
+  },
+  "auth": {
+    "login": "Log In",
+    "register": "Register",
+    "logout": "Log Out",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full Name",
+    "phoneNumber": "Phone Number",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "loginFailed": "Login failed. Please check your credentials.",
+    "registerFailed": "Registration failed. Please try again.",
+    "sessionExpired": "Your session has expired. Please log in again."
+  },
+  "report": {
+    "title": "Report Infraction",
+    "plateNumber": "Plate Number",
+    "vehicleType": "Vehicle Type",
+    "infraction": "Infraction Type",
+    "description": "Description",
+    "location": "Location",
+    "evidence": "Evidence",
+    "stepCapture": "Capture",
+    "stepConfirm": "Confirm",
+    "stepSubmit": "Submit",
+    "submitSuccess": "Report submitted successfully!",
+    "submitFailed": "Failed to submit report.",
+    "submitQueued": "Report queued for submission when online.",
+    "noReports": "No reports found.",
+    "deleteConfirm": "Are you sure you want to delete this report?",
+    "descriptionPlaceholder": "Describe what you observed..."
+  },
+  "evidence": {
+    "addPhoto": "Add Photo",
+    "addVideo": "Add Video",
+    "addDocument": "Add Document",
+    "noEvidence": "No evidence attached.",
+    "uploadFailed": "Failed to upload evidence."
+  },
+  "verification": {
+    "title": "Verification Queue",
+    "verify": "Verify",
+    "reject": "Reject",
+    "rejectReason": "Reason for Rejection",
+    "rejectDetails": "Additional Details",
+    "emptyQueue": "No reports to verify.",
+    "verifySuccess": "Report verified successfully.",
+    "rejectSuccess": "Report rejected."
+  },
+  "blockchain": {
+    "balance": "Balance",
+    "available": "Available",
+    "staked": "Staked",
+    "pendingRewards": "Pending Rewards",
+    "stake": "Stake",
+    "unstake": "Unstake",
+    "claimRewards": "Claim Rewards",
+    "transactions": "Transactions",
+    "noTransactions": "No transactions found.",
+    "stakingInfo": "Staking Info",
+    "estimatedApy": "Estimated APY",
+    "lockPeriodEnds": "Lock Period Ends"
+  },
+  "offline": {
+    "queueCount": "{{count}} item(s) queued offline",
+    "syncing": "Syncing offline data...",
+    "syncComplete": "All data synced.",
+    "syncFailed": "Some items failed to sync."
+  },
+  "validation": {
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email address",
+    "passwordRequired": "Password is required",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "plateRequired": "Plate number is required",
+    "vehicleTypeRequired": "Vehicle type is required",
+    "infractionRequired": "Infraction type is required",
+    "descriptionRequired": "Description is required",
+    "locationRequired": "Location is required"
+  }
+}

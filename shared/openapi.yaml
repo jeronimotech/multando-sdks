@@ -1,0 +1,724 @@
+openapi: "3.1.0"
+info:
+  title: Multando API
+  description: |
+    REST API for the Multando traffic violation reporting platform.
+    This spec serves as the canonical contract for all SDK implementations.
+  version: "1.0.0"
+  contact:
+    name: Multando Team
+    url: https://multando.com
+
+servers:
+  - url: https://api.multando.com/api/v1
+    description: Production
+  - url: http://localhost:8000/api/v1
+    description: Local development
+
+paths:
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /auth/link-wallet:
+    post:
+      tags: [Authentication]
+      summary: Link Solana wallet
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalletLinkRequest"
+      responses:
+        "200":
+          description: Wallet linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /reports:
+    post:
+      tags: [Reports]
+      summary: Create a new report
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportCreate"
+      responses:
+        "201":
+          description: Report created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportDetail"
+    get:
+      tags: [Reports]
+      summary: List reports
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1, minimum: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 20, minimum: 1, maximum: 100 }
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/ReportStatus" }
+        - name: infraction_id
+          in: query
+          schema: { type: integer }
+        - name: city
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportList"
+
+  /reports/{report_id}:
+    get:
+      tags: [Reports]
+      summary: Get report by ID
+      parameters:
+        - name: report_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Report detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportDetail"
+    delete:
+      tags: [Reports]
+      summary: Delete a pending report
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: report_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Report deleted
+
+  /reports/by-plate/{plate}:
+    get:
+      tags: [Reports]
+      summary: Get reports by vehicle plate
+      parameters:
+        - name: plate
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Reports for plate
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportSummary"
+
+  /reports/{report_id}/evidence:
+    post:
+      tags: [Evidence]
+      summary: Add evidence to a report
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: report_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: evidence_type
+          in: query
+          required: true
+          schema: { $ref: "#/components/schemas/EvidenceType" }
+        - name: url
+          in: query
+          required: true
+          schema: { type: string, format: uri }
+        - name: mime_type
+          in: query
+          schema: { type: string, default: "image/jpeg" }
+        - name: thumbnail_url
+          in: query
+          schema: { type: string }
+        - name: file_size
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        "201":
+          description: Evidence added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceResponse"
+
+  /uploads/presign:
+    post:
+      tags: [Uploads]
+      summary: Generate presigned upload URL
+      description: Returns a presigned URL for uploading evidence files directly to cloud storage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [filename, content_type]
+              properties:
+                filename: { type: string }
+                content_type: { type: string, default: "image/jpeg" }
+                file_size: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: Presigned URL generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  upload_url: { type: string, format: uri }
+                  file_key: { type: string }
+                  public_url: { type: string, format: uri }
+                  expires_in: { type: integer }
+
+  /infractions:
+    get:
+      tags: [Reference Data]
+      summary: List all infraction types
+      responses:
+        "200":
+          description: Infraction list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfractionList"
+
+  /vehicle-types:
+    get:
+      tags: [Reference Data]
+      summary: List all vehicle types
+      responses:
+        "200":
+          description: Vehicle type list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleTypeList"
+
+  /verification/{report_id}/verify:
+    post:
+      tags: [Verification]
+      summary: Verify a report
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: report_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Report verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportDetail"
+
+  /verification/{report_id}/reject:
+    post:
+      tags: [Verification]
+      summary: Reject a report
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: report_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectRequest"
+      responses:
+        "200":
+          description: Report rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportDetail"
+
+  /verification/queue:
+    get:
+      tags: [Verification]
+      summary: Get verification queue
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        "200":
+          description: Verification queue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportList"
+
+  /blockchain/balance:
+    get:
+      tags: [Blockchain]
+      summary: Get token balance
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Token balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenBalance"
+
+  /blockchain/stake:
+    post:
+      tags: [Blockchain]
+      summary: Stake tokens
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StakeRequest"
+      responses:
+        "200":
+          description: Tokens staked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenTransactionResponse"
+
+  /blockchain/unstake:
+    post:
+      tags: [Blockchain]
+      summary: Unstake tokens
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StakeRequest"
+      responses:
+        "200":
+          description: Tokens unstaked
+
+  /blockchain/staking-info:
+    get:
+      tags: [Blockchain]
+      summary: Get staking info
+      responses:
+        "200":
+          description: Staking info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StakingInfo"
+
+  /blockchain/transactions:
+    get:
+      tags: [Blockchain]
+      summary: Get transaction history
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Transaction list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenTransactionList"
+
+  /blockchain/claim-rewards:
+    post:
+      tags: [Blockchain]
+      summary: Claim staking rewards
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Rewards claimed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimRewardsResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password, username, display_name]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        username: { type: string, minLength: 3, maxLength: 30 }
+        display_name: { type: string }
+        phone_number: { type: string }
+        locale: { type: string, default: "en" }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token: { type: string }
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        token_type: { type: string, default: "bearer" }
+        expires_in: { type: integer }
+
+    WalletLinkRequest:
+      type: object
+      required: [wallet_address]
+      properties:
+        wallet_address: { type: string, minLength: 32, maxLength: 44 }
+
+    UserProfile:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        username: { type: string }
+        display_name: { type: string }
+        phone_number: { type: string }
+        wallet_address: { type: string }
+        avatar_url: { type: string }
+        reputation_score: { type: integer }
+        total_points: { type: integer }
+        role: { type: string }
+        locale: { type: string }
+        is_verified: { type: boolean }
+        created_at: { type: string, format: date-time }
+
+    UserPublic:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        display_name: { type: string }
+        avatar_url: { type: string }
+        reputation_score: { type: integer }
+
+    LocationSchema:
+      type: object
+      required: [lat, lon]
+      properties:
+        lat: { type: number, minimum: -90, maximum: 90 }
+        lon: { type: number, minimum: -180, maximum: 180 }
+        address: { type: string }
+        city: { type: string }
+        country: { type: string }
+
+    ReportCreate:
+      type: object
+      required: [infraction_id, incident_datetime, location]
+      properties:
+        infraction_id: { type: integer }
+        incident_datetime: { type: string, format: date-time }
+        location: { $ref: "#/components/schemas/LocationSchema" }
+        vehicle_plate: { type: string }
+        vehicle_type_id: { type: integer }
+        vehicle_category: { $ref: "#/components/schemas/VehicleCategory" }
+        source: { $ref: "#/components/schemas/ReportSource" }
+
+    ReportDetail:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        short_id: { type: string }
+        status: { $ref: "#/components/schemas/ReportStatus" }
+        vehicle_plate: { type: string }
+        vehicle_type: { $ref: "#/components/schemas/VehicleTypeResponse" }
+        infraction: { $ref: "#/components/schemas/InfractionResponse" }
+        location: { $ref: "#/components/schemas/LocationSchema" }
+        created_at: { type: string, format: date-time }
+        reporter: { $ref: "#/components/schemas/UserPublic" }
+        verifier: { $ref: "#/components/schemas/UserPublic" }
+        evidences:
+          type: array
+          items: { $ref: "#/components/schemas/EvidenceResponse" }
+        verified_at: { type: string, format: date-time }
+        on_chain: { type: boolean }
+        tx_signature: { type: string }
+        incident_datetime: { type: string, format: date-time }
+        vehicle_category: { $ref: "#/components/schemas/VehicleCategory" }
+        source: { $ref: "#/components/schemas/ReportSource" }
+        rejection_reason: { type: string }
+
+    ReportSummary:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        short_id: { type: string }
+        status: { $ref: "#/components/schemas/ReportStatus" }
+        vehicle_plate: { type: string }
+        infraction_name: { type: string }
+        location: { $ref: "#/components/schemas/LocationSchema" }
+        created_at: { type: string, format: date-time }
+        incident_datetime: { type: string, format: date-time }
+
+    ReportList:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ReportSummary" }
+        total: { type: integer }
+        page: { type: integer }
+        page_size: { type: integer }
+
+    EvidenceResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { $ref: "#/components/schemas/EvidenceType" }
+        url: { type: string, format: uri }
+        thumbnail_url: { type: string }
+        mime_type: { type: string }
+        ipfs_hash: { type: string }
+        created_at: { type: string, format: date-time }
+
+    InfractionResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        name_en: { type: string }
+        name_es: { type: string }
+        description_en: { type: string }
+        description_es: { type: string }
+        category: { $ref: "#/components/schemas/InfractionCategory" }
+        severity: { $ref: "#/components/schemas/InfractionSeverity" }
+        points_reward: { type: integer }
+        multa_reward: { type: number }
+        icon: { type: string }
+
+    InfractionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/InfractionResponse" }
+
+    VehicleTypeResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        name_en: { type: string }
+        name_es: { type: string }
+        icon: { type: string }
+        plate_pattern: { type: string }
+        requires_plate: { type: boolean }
+
+    VehicleTypeList:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/VehicleTypeResponse" }
+
+    RejectRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 10, maxLength: 500 }
+
+    TokenBalance:
+      type: object
+      properties:
+        balance: { type: number }
+        staked_balance: { type: number }
+        pending_rewards: { type: number }
+        total_earned: { type: number }
+
+    StakeRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount: { type: number, exclusiveMinimum: 0 }
+
+    StakingInfo:
+      type: object
+      properties:
+        apy: { type: number }
+        min_stake: { type: number }
+        lock_period_days: { type: integer }
+        total_staked: { type: number }
+        stakers_count: { type: integer }
+
+    TokenTransactionResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { type: string }
+        amount: { type: number }
+        tx_signature: { type: string }
+        status: { type: string }
+        created_at: { type: string, format: date-time }
+
+    TokenTransactionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/TokenTransactionResponse" }
+        total: { type: integer }
+        page: { type: integer }
+        page_size: { type: integer }
+
+    ClaimRewardsResponse:
+      type: object
+      properties:
+        amount_claimed: { type: number }
+        tx_signature: { type: string }
+        new_balance: { type: number }
+
+    ReportStatus:
+      type: string
+      enum: [pending, verified, rejected, disputed]
+
+    ReportSource:
+      type: string
+      enum: [web, mobile, whatsapp, sdk]
+
+    VehicleCategory:
+      type: string
+      enum: [private, public, diplomatic, emergency, commercial]
+
+    EvidenceType:
+      type: string
+      enum: [image, video]
+
+    InfractionCategory:
+      type: string
+      enum: [speed, safety, parking, behavior]
+
+    InfractionSeverity:
+      type: string
+      enum: [low, medium, high, critical]
