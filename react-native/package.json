@@ -1,7 +1,22 @@
 {
   "name": "@multando/react-native-sdk",
-  "version": "1.0.0",
-  "description": "React Native SDK for the Multando infraction reporting platform",
+  "version": "0.1.0",
+  "description": "Official React Native SDK for the Multando traffic violation reporting platform. Report infractions, earn MULTA tokens, secure evidence capture.",
+  "author": "Jeronimo Tech <dev@jeronimotech.com>",
+  "license": "MIT",
+  "homepage": "https://multando.com/developers",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jeronimotech/multando-sdks.git",
+    "directory": "react-native"
+  },
+  "bugs": {
+    "url": "https://github.com/jeronimotech/multando-sdks/issues"
+  },
+  "keywords": ["multando", "traffic", "reporting", "solana", "blockchain", "react-native", "sdk"],
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "files": [

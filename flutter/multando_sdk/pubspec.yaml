@@ -1,8 +1,31 @@
 name: multando_sdk
-description: Flutter SDK for the Multando infraction reporting platform.
-version: 1.0.0
-homepage: https://multando.io
-repository: https://github.com/multando/flutter-sdk
+description: >-
+  Official Flutter SDK for the Multando traffic violation reporting platform.
+  Report infractions, earn MULTA tokens, secure evidence capture with digital
+  signatures, and integrate with the Multando API.
+version: 0.1.0
+homepage: https://multando.com
+repository: https://github.com/jeronimotech/multando-sdks
+issue_tracker: https://github.com/jeronimotech/multando-sdks/issues
+documentation: https://multando.com/developers
+
+topics:
+  - traffic
+  - reporting
+  - blockchain
+  - solana
+  - civic-tech
+
+screenshots:
+  - description: 'Secure evidence capture with watermark'
+    path: screenshots/capture.png
+
+funding:
+  - https://multando.com
+
+platforms:
+  android:
+  ios:
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
