@@ -224,7 +224,7 @@ final class ModelsTests: XCTestCase {
             "category": {
                 "id": "cat-traffic",
                 "name": "Traffic",
-                "description": "Traffic violations"
+                "description": "Traffic infractions"
             },
             "created_at": "2024-06-01T00:00:00Z"
         }

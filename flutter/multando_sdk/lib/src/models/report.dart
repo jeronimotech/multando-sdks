@@ -14,8 +14,8 @@ class LocationData {
 
   factory LocationData.fromJson(Map<String, dynamic> json) {
     return LocationData(
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
+      latitude: (json['lat'] as num? ?? json['latitude'] as num).toDouble(),
+      longitude: (json['lon'] as num? ?? json['longitude'] as num).toDouble(),
       address: json['address'] as String?,
       city: json['city'] as String?,
       state: json['state'] as String?,
@@ -33,13 +33,11 @@ class LocationData {
   final String? postalCode;
 
   Map<String, dynamic> toJson() => {
-        'latitude': latitude,
-        'longitude': longitude,
+        'lat': latitude,
+        'lon': longitude,
         if (address != null) 'address': address,
         if (city != null) 'city': city,
-        if (state != null) 'state': state,
         if (country != null) 'country': country,
-        if (postalCode != null) 'postal_code': postalCode,
       };
 }
 
@@ -80,12 +78,12 @@ class ReportCreate {
   final ReportSource source;
 
   Map<String, dynamic> toJson() => {
-        'infraction_id': infractionId,
-        'plate_number': plateNumber,
+        'infraction_id': int.tryParse(infractionId) ?? infractionId,
+        'vehicle_plate': plateNumber,
         'location': location.toJson(),
-        if (vehicleTypeId != null) 'vehicle_type_id': vehicleTypeId,
-        if (description != null) 'description': description,
-        if (occurredAt != null) 'occurred_at': occurredAt!.toIso8601String(),
+        if (vehicleTypeId != null && int.tryParse(vehicleTypeId!) != null)
+          'vehicle_type_id': int.parse(vehicleTypeId!),
+        'incident_datetime': (occurredAt ?? DateTime.now()).toUtc().toIso8601String(),
         'source': source.value,
       };
 }
@@ -111,9 +109,9 @@ class ReportDetail {
 
   factory ReportDetail.fromJson(Map<String, dynamic> json) {
     return ReportDetail(
-      id: json['id'] as String,
-      infractionId: json['infraction_id'] as String,
-      plateNumber: json['plate_number'] as String,
+      id: json['id'].toString(),
+      infractionId: (json['infraction_id'] ?? '').toString(),
+      plateNumber: (json['vehicle_plate'] ?? json['plate_number'] ?? '') as String,
       location: LocationData.fromJson(json['location'] as Map<String, dynamic>),
       status: ReportStatus.values.firstWhere(
         (e) => e.value == json['status'],
@@ -121,14 +119,16 @@ class ReportDetail {
       ),
       source: ReportSource.values.firstWhere(
         (e) => e.value == json['source'],
-        orElse: () => ReportSource.sdk,
+        orElse: () => ReportSource.mobile,
       ),
-      reporterId: json['reporter_id'] as String,
-      vehicleTypeId: json['vehicle_type_id'] as String?,
+      reporterId: (json['reporter_id'] ?? '').toString(),
+      vehicleTypeId: json['vehicle_type_id']?.toString(),
       description: json['description'] as String?,
-      occurredAt: json['occurred_at'] != null
-          ? DateTime.parse(json['occurred_at'] as String)
-          : null,
+      occurredAt: json['incident_datetime'] != null
+          ? DateTime.parse(json['incident_datetime'] as String)
+          : json['occurred_at'] != null
+              ? DateTime.parse(json['occurred_at'] as String)
+              : null,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
@@ -192,16 +192,16 @@ class ReportSummary {
 
   factory ReportSummary.fromJson(Map<String, dynamic> json) {
     return ReportSummary(
-      id: json['id'] as String,
-      infractionId: json['infraction_id'] as String,
-      plateNumber: json['plate_number'] as String,
+      id: json['id'].toString(),
+      infractionId: (json['infraction_id'] ?? '').toString(),
+      plateNumber: (json['vehicle_plate'] ?? json['plate_number'] ?? '') as String,
       status: ReportStatus.values.firstWhere(
         (e) => e.value == json['status'],
         orElse: () => ReportStatus.draft,
       ),
       source: ReportSource.values.firstWhere(
         (e) => e.value == json['source'],
-        orElse: () => ReportSource.sdk,
+        orElse: () => ReportSource.mobile,
       ),
       createdAt: DateTime.parse(json['created_at'] as String),
       description: json['description'] as String?,

@@ -3,20 +3,26 @@ import 'enums.dart';
 class InfractionResponse {
   const InfractionResponse({
     required this.id,
-    required this.name,
-    required this.description,
+    required this.code,
+    required this.nameEn,
+    required this.nameEs,
+    required this.descriptionEn,
+    required this.descriptionEs,
     required this.category,
     required this.severity,
-    required this.basePoints,
-    this.fineAmount,
-    required this.isActive,
+    required this.pointsReward,
+    this.multaReward,
+    this.icon,
   });
 
   factory InfractionResponse.fromJson(Map<String, dynamic> json) {
     return InfractionResponse(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      description: json['description'] as String,
+      id: json['id'] is int ? json['id'] as int : int.tryParse(json['id'].toString()) ?? 0,
+      code: json['code'] as String? ?? '',
+      nameEn: json['name_en'] as String? ?? json['name'] as String? ?? '',
+      nameEs: json['name_es'] as String? ?? json['name'] as String? ?? '',
+      descriptionEn: json['description_en'] as String? ?? json['description'] as String? ?? '',
+      descriptionEs: json['description_es'] as String? ?? json['description'] as String? ?? '',
       category: InfractionCategory.values.firstWhere(
         (e) => e.value == json['category'],
         orElse: () => InfractionCategory.other,
@@ -25,29 +31,46 @@ class InfractionResponse {
         (e) => e.value == json['severity'],
         orElse: () => InfractionSeverity.low,
       ),
-      basePoints: json['base_points'] as int,
-      fineAmount: (json['fine_amount'] as num?)?.toDouble(),
-      isActive: json['is_active'] as bool,
+      pointsReward: json['points_reward'] as int? ?? json['base_points'] as int? ?? 0,
+      multaReward: _parseDouble(json['multa_reward'] ?? json['fine_amount']),
+      icon: json['icon'] as String?,
     );
   }
 
-  final String id;
-  final String name;
-  final String description;
+  final int id;
+  final String code;
+  final String nameEn;
+  final String nameEs;
+  final String descriptionEn;
+  final String descriptionEs;
   final InfractionCategory category;
   final InfractionSeverity severity;
-  final int basePoints;
-  final double? fineAmount;
-  final bool isActive;
+  final int pointsReward;
+  final double? multaReward;
+  final String? icon;
+
+  /// Convenience getter for localized name.
+  String name({String locale = 'en'}) => locale == 'es' ? nameEs : nameEn;
+  String description({String locale = 'en'}) => locale == 'es' ? descriptionEs : descriptionEn;
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'name': name,
-        'description': description,
+        'code': code,
+        'name_en': nameEn,
+        'name_es': nameEs,
+        'description_en': descriptionEn,
+        'description_es': descriptionEs,
         'category': category.value,
         'severity': severity.value,
-        'base_points': basePoints,
-        if (fineAmount != null) 'fine_amount': fineAmount,
-        'is_active': isActive,
+        'points_reward': pointsReward,
+        if (multaReward != null) 'multa_reward': multaReward,
+        if (icon != null) 'icon': icon,
       };
+}
+
+double? _parseDouble(dynamic v) {
+  if (v == null) return null;
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v);
+  return null;
 }

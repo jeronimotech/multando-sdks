@@ -248,7 +248,7 @@ export function MultandoChat({
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyTitle}>Welcome to Multando AI</Text>
             <Text style={styles.emptySubtitle}>
-              Ask me anything about traffic violations, reports, or your account.
+              Ask me anything about traffic infractions, reports, or your account.
             </Text>
           </View>
         }

@@ -320,7 +320,7 @@ private fun EmptyState() {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Ask me anything about traffic violations, reports, or your account.",
+            text = "Ask me anything about traffic infractions, reports, or your account.",
             style = MaterialTheme.typography.bodyMedium,
             color = Color.Gray,
             textAlign = TextAlign.Center,

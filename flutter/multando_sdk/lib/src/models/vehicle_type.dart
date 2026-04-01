@@ -1,38 +1,44 @@
-import 'enums.dart';
-
 class VehicleTypeResponse {
   const VehicleTypeResponse({
     required this.id,
-    required this.name,
-    required this.category,
-    this.description,
-    required this.isActive,
+    required this.code,
+    required this.nameEn,
+    required this.nameEs,
+    this.icon,
+    this.platePattern,
+    this.requiresPlate = true,
   });
 
   factory VehicleTypeResponse.fromJson(Map<String, dynamic> json) {
     return VehicleTypeResponse(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      category: VehicleCategory.values.firstWhere(
-        (e) => e.value == json['category'],
-        orElse: () => VehicleCategory.other,
-      ),
-      description: json['description'] as String?,
-      isActive: json['is_active'] as bool,
+      id: json['id'] is int ? json['id'] as int : int.tryParse(json['id'].toString()) ?? 0,
+      code: json['code'] as String? ?? '',
+      nameEn: json['name_en'] as String? ?? json['name'] as String? ?? '',
+      nameEs: json['name_es'] as String? ?? json['name'] as String? ?? '',
+      icon: json['icon'] as String?,
+      platePattern: json['plate_pattern'] as String?,
+      requiresPlate: json['requires_plate'] as bool? ?? true,
     );
   }
 
-  final String id;
-  final String name;
-  final VehicleCategory category;
-  final String? description;
-  final bool isActive;
+  final int id;
+  final String code;
+  final String nameEn;
+  final String nameEs;
+  final String? icon;
+  final String? platePattern;
+  final bool requiresPlate;
+
+  /// Convenience getter for localized name.
+  String name({String locale = 'en'}) => locale == 'es' ? nameEs : nameEn;
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'name': name,
-        'category': category.value,
-        if (description != null) 'description': description,
-        'is_active': isActive,
+        'code': code,
+        'name_en': nameEn,
+        'name_es': nameEs,
+        if (icon != null) 'icon': icon,
+        if (platePattern != null) 'plate_pattern': platePattern,
+        'requires_plate': requiresPlate,
       };
 }

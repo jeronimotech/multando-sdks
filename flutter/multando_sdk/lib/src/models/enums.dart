@@ -12,10 +12,10 @@ enum ReportStatus {
 }
 
 enum ReportSource {
-  mobileApp('mobile_app'),
+  mobile('mobile'),
   web('web'),
-  sdk('sdk'),
-  api('api');
+  whatsapp('whatsapp'),
+  sdk('sdk');
 
   const ReportSource(this.value);
   final String value;

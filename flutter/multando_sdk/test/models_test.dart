@@ -57,7 +57,7 @@ void main() {
           country: 'UK',
         ),
         vehicleTypeId: 'vt-car',
-        description: 'Red light violation',
+        description: 'Red light infraction',
       );
 
       final jsonString = jsonEncode(original.toJson());

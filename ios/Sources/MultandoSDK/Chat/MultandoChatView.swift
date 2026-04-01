@@ -171,7 +171,7 @@ public struct MultandoChatView: View {
             Text("Welcome to Multando AI")
                 .font(.system(size: 20, weight: .bold))
                 .foregroundColor(.primary)
-            Text("Ask me anything about traffic violations, reports, or your account.")
+            Text("Ask me anything about traffic infractions, reports, or your account.")
                 .font(.multandoBody)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
