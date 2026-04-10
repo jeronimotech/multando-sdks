@@ -79,9 +79,10 @@ class AntiFraud {
     final evidenceTime = DateTime.parse(evidence.timestamp).millisecondsSinceEpoch;
     final failed = <String>[];
 
-    // 1. Capture method
-    final captureMethodValid = evidence.captureMethod == 'camera';
-    if (!captureMethodValid) failed.add('Not captured via camera');
+    // 1. Capture method (camera or gallery are both acceptable)
+    final captureMethodValid =
+        evidence.captureMethod == 'camera' || evidence.captureMethod == 'gallery';
+    if (!captureMethodValid) failed.add('Invalid capture method');
 
     // 2. Timestamp freshness
     final timestampFresh = (now - evidenceTime).abs() <= _freshnessWindowMs;

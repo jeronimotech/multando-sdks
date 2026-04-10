@@ -18,6 +18,10 @@ export 'src/models/user.dart';
 export 'src/models/vehicle_type.dart';
 export 'src/models/verification.dart';
 
+// Capture
+export 'src/capture/evidence_signer.dart';
+export 'src/capture/anti_fraud.dart';
+
 // Services
 export 'src/services/auth_service.dart';
 export 'src/services/blockchain_service.dart';

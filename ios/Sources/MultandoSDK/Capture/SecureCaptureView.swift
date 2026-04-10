@@ -3,17 +3,21 @@
 //  MultandoSDK
 //
 //  SwiftUI view that provides secure evidence capture using AVFoundation,
-//  CoreLocation, and CoreMotion.
+//  CoreLocation, CoreMotion, and PhotosUI (gallery picker).
 //
 
 import AVFoundation
 import CoreLocation
 import CoreMotion
+import PhotosUI
 import SwiftUI
 
 // MARK: - SecureCaptureView
 
 /// A self-contained SwiftUI view for secure evidence capture.
+///
+/// Supports both camera capture and gallery picking (gallery is essential for
+/// simulator testing).
 ///
 /// ```swift
 /// SecureCaptureView { evidence in
@@ -58,10 +62,20 @@ public struct SecureCaptureView: View {
             // Live watermark
             VStack {
                 HStack {
-                    Text("🛡 MULTANDO")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white.opacity(0.75))
-                        .shadow(radius: 2)
+                    // MULTANDO branding badge
+                    HStack(spacing: 4) {
+                        Image(systemName: "shield.fill")
+                            .font(.system(size: 11))
+                        Text("MULTANDO")
+                            .font(.system(size: 12, weight: .heavy))
+                            .tracking(1)
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.red.opacity(0.8))
+                    .cornerRadius(6)
+
                     Spacer()
                 }
                 .padding(.horizontal, 12)
@@ -69,10 +83,23 @@ public struct SecureCaptureView: View {
                 Spacer()
             }
 
+            // Signing overlay
+            if vm.signing {
+                Color.black.opacity(0.5).ignoresSafeArea()
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(1.5)
+                    Text("Signing evidence...")
+                        .foregroundColor(.white)
+                        .font(.system(size: 14, weight: .semibold))
+                }
+            }
+
             // Controls
             VStack {
                 Spacer()
-                HStack(spacing: 40) {
+                HStack(spacing: 24) {
                     if onClose != nil {
                         Button(action: { onClose?() }) {
                             Image(systemName: "xmark")
@@ -110,6 +137,16 @@ public struct SecureCaptureView: View {
                     }
                     .disabled(vm.capturing)
 
+                    // Gallery button
+                    Button(action: { vm.showGalleryPicker = true }) {
+                        Image(systemName: "photo.on.rectangle")
+                            .font(.title2)
+                            .foregroundColor(.white)
+                            .frame(width: 48, height: 48)
+                            .background(Color.white.opacity(0.15))
+                            .clipShape(Circle())
+                    }
+
                     Button(action: { vm.flipCamera() }) {
                         Image(systemName: "camera.rotate")
                             .font(.title2)
@@ -124,6 +161,12 @@ public struct SecureCaptureView: View {
                 .background(Color.black.opacity(0.7))
             }
         }
+        .sheet(isPresented: $vm.showGalleryPicker) {
+            GalleryPickerView { image, data in
+                vm.showGalleryPicker = false
+                Task { await vm.processGalleryImage(image: image, data: data) }
+            }
+        }
     }
 
     // MARK: Preview View
@@ -135,36 +178,82 @@ public struct SecureCaptureView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
 
+                // Gradient overlay
+                VStack {
+                    LinearGradient(
+                        colors: [Color.black.opacity(0.4), Color.clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 60)
+                    Spacer()
+                    LinearGradient(
+                        colors: [Color.clear, Color.black.opacity(0.5)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 60)
+                }
+
                 VStack {
                     HStack {
-                        Text("🛡 MULTANDO")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white.opacity(0.75))
+                        // MULTANDO branding badge
+                        HStack(spacing: 4) {
+                            Image(systemName: "shield.fill")
+                                .font(.system(size: 11))
+                            Text("MULTANDO")
+                                .font(.system(size: 12, weight: .heavy))
+                                .tracking(1)
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.red.opacity(0.8))
+                        .cornerRadius(6)
+
                         Spacer()
-                        Text("✓ VERIFIED")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(Color.green.opacity(0.6))
-                            .cornerRadius(6)
+
+                        // Signed badge
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.shield.fill")
+                                .font(.system(size: 11))
+                            Text("SIGNED")
+                                .font(.system(size: 10, weight: .bold))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.green.opacity(0.8))
+                        .cornerRadius(6)
                     }
                     .padding(12)
+
                     Spacer()
+
+                    // Capture method badge
                     HStack {
-                        Text(evidence.timestamp)
+                        Text(evidence.captureMethod == "camera" ? "Camera" : "Gallery")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.indigo.opacity(0.7))
+                            .cornerRadius(4)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 4)
+
+                    HStack {
+                        Text(formatTimestamp(evidence.timestamp))
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundColor(.white)
                             .shadow(radius: 2)
                         Spacer()
-                        Text(String(
-                            format: "%.4f°N %.4f°W",
-                            evidence.latitude,
-                            abs(evidence.longitude)
-                        ))
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.white)
-                        .shadow(radius: 2)
+                        Text(formatGps(evidence.latitude, evidence.longitude))
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(.white)
+                            .shadow(radius: 2)
                     }
                     .padding(12)
                 }
@@ -190,6 +279,64 @@ public struct SecureCaptureView: View {
             .background(Color.black.opacity(0.85))
         }
     }
+
+    // MARK: Helpers
+
+    private func formatTimestamp(_ iso: String) -> String {
+        let formatter = ISO8601DateFormatter()
+        guard let date = formatter.date(from: iso) else { return iso }
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        df.timeZone = TimeZone(identifier: "UTC")
+        return df.string(from: date) + " UTC"
+    }
+
+    private func formatGps(_ lat: Double, _ lon: Double) -> String {
+        let latDir = lat >= 0 ? "N" : "S"
+        let lonDir = lon >= 0 ? "E" : "W"
+        return String(format: "%.4f%@ %.4f%@", abs(lat), latDir, abs(lon), lonDir)
+    }
+}
+
+// MARK: - Gallery Picker (PhotosUI)
+
+struct GalleryPickerView: UIViewControllerRepresentable {
+    let onPick: (UIImage, Data) -> Void
+
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration()
+        config.filter = .images
+        config.selectionLimit = 1
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick) }
+
+    final class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let onPick: (UIImage, Data) -> Void
+
+        init(onPick: @escaping (UIImage, Data) -> Void) {
+            self.onPick = onPick
+        }
+
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            picker.dismiss(animated: true)
+            guard let provider = results.first?.itemProvider,
+                  provider.canLoadObject(ofClass: UIImage.self) else { return }
+
+            provider.loadObject(ofClass: UIImage.self) { [weak self] image, _ in
+                guard let uiImage = image as? UIImage,
+                      let data = uiImage.jpegData(compressionQuality: 0.9) else { return }
+                DispatchQueue.main.async {
+                    self?.onPick(uiImage, data)
+                }
+            }
+        }
+    }
 }
 
 // MARK: - ViewModel
@@ -197,7 +344,9 @@ public struct SecureCaptureView: View {
 @MainActor
 final class SecureCaptureViewModel: ObservableObject {
     @Published var capturing = false
+    @Published var signing = false
     @Published var flashOn = false
+    @Published var showGalleryPicker = false
     @Published var previewEvidence: SecureEvidence?
     @Published var previewImage: UIImage?
 
@@ -283,25 +432,31 @@ final class SecureCaptureViewModel: ObservableObject {
         }
     }
 
-    // MARK: Capture
+    // MARK: GPS helper
 
-    func capture() async {
-        guard !capturing else { return }
-        capturing = true
-        defer { capturing = false }
-
-        startMotionDetection()
-
-        // GPS
-        let location = await withCheckedContinuation { (cont: CheckedContinuation<CLLocation?, Never>) in
+    private func fetchLocation() async -> CLLocation? {
+        await withCheckedContinuation { (cont: CheckedContinuation<CLLocation?, Never>) in
             let delegate = SingleLocationDelegate { loc in
                 cont.resume(returning: loc)
             }
             locationManager.delegate = delegate
             locationManager.requestLocation()
-            // Keep delegate alive
             objc_setAssociatedObject(locationManager, "delegate", delegate, .OBJC_ASSOCIATION_RETAIN)
         }
+    }
+
+    // MARK: Camera Capture
+
+    func capture() async {
+        guard !capturing else { return }
+        capturing = true
+        signing = true
+        defer { capturing = false; signing = false }
+
+        startMotionDetection()
+
+        // GPS
+        let location = await fetchLocation()
 
         let lat = location?.coordinate.latitude ?? 0
         let lon = location?.coordinate.longitude ?? 0
@@ -334,11 +489,49 @@ final class SecureCaptureViewModel: ObservableObject {
             longitude: lon,
             altitude: alt,
             accuracy: acc,
-            motionVerified: motionDetected
+            motionVerified: motionDetected,
+            captureMethod: "camera"
         )
 
         previewEvidence = evidence
         previewImage = UIImage(data: imageData)
+    }
+
+    // MARK: Gallery capture
+
+    func processGalleryImage(image: UIImage, data: Data) async {
+        capturing = true
+        signing = true
+        defer { capturing = false; signing = false }
+
+        // GPS
+        let location = await fetchLocation()
+
+        let lat = location?.coordinate.latitude ?? 0
+        let lon = location?.coordinate.longitude ?? 0
+        let alt = location?.altitude
+        let acc = location?.horizontalAccuracy ?? 0
+
+        // Save to temp file
+        let tempPath = NSTemporaryDirectory() + UUID().uuidString + ".jpg"
+        try? data.write(to: URL(fileURLWithPath: tempPath))
+
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+
+        let evidence = EvidenceSigner.signEvidence(
+            imageData: data,
+            imageUri: tempPath,
+            timestamp: timestamp,
+            latitude: lat,
+            longitude: lon,
+            altitude: alt,
+            accuracy: acc,
+            motionVerified: false,
+            captureMethod: "gallery"
+        )
+
+        previewEvidence = evidence
+        previewImage = image
     }
 
     func clearPreview() {

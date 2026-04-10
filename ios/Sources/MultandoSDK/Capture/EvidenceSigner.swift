@@ -103,6 +103,9 @@ public final class EvidenceSigner {
     }
 
     /// Sign evidence and return a complete `SecureEvidence`.
+    ///
+    /// - Parameter captureMethod: `"camera"` or `"gallery"` depending on how
+    ///   the image was obtained.
     public static func signEvidence(
         imageData: Data,
         imageUri: String,
@@ -111,7 +114,8 @@ public final class EvidenceSigner {
         longitude: Double,
         altitude: Double?,
         accuracy: Double,
-        motionVerified: Bool
+        motionVerified: Bool,
+        captureMethod: String = "camera"
     ) -> SecureEvidence {
         let deviceId = getDeviceId()
         let deviceKey = getDeviceKey()
@@ -138,7 +142,7 @@ public final class EvidenceSigner {
             deviceId: deviceId,
             appVersion: version,
             platform: "ios",
-            captureMethod: "camera",
+            captureMethod: captureMethod,
             motionVerified: motionVerified,
             watermarkApplied: true,
             signature: signature

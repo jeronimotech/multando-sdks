@@ -155,6 +155,9 @@ class EvidenceSigner {
   }
 
   /// Sign evidence and return a complete [SecureEvidence] object.
+  ///
+  /// [captureMethod] should be `'camera'` or `'gallery'` depending on how
+  /// the image was obtained.
   static Future<SecureEvidence> signEvidence({
     required Uint8List imageBytes,
     required String timestamp,
@@ -164,6 +167,7 @@ class EvidenceSigner {
     required double accuracy,
     required bool motionVerified,
     required String imageUri,
+    String captureMethod = 'camera',
   }) async {
     final deviceId = await getDeviceId();
     final deviceKey = await _getDeviceKey();
@@ -189,7 +193,7 @@ class EvidenceSigner {
       deviceId: deviceId,
       appVersion: '1.0.0',
       platform: platform,
-      captureMethod: 'camera',
+      captureMethod: captureMethod,
       motionVerified: motionVerified,
       watermarkApplied: true,
       signature: signature,

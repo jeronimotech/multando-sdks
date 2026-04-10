@@ -3,15 +3,18 @@ package com.multando.sdk.capture
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.Location
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.view.WindowManager
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -29,8 +32,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -43,24 +48,29 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
-import android.graphics.BitmapFactory
 import java.io.File
+import java.text.SimpleDateFormat
 import java.time.Instant
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.math.abs
 import kotlin.math.sqrt
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
  * Fragment hosting a Jetpack Compose secure capture UI.
  *
- * Uses CameraX for capture, FusedLocationProviderClient for GPS, and the
- * Android SensorManager for motion detection.
+ * Uses CameraX for camera capture, PhotoPicker for gallery selection,
+ * FusedLocationProviderClient for GPS, and the Android SensorManager for
+ * motion detection. Supports both camera and gallery (gallery is essential
+ * for emulator testing).
  */
 class SecureCaptureFragment : Fragment() {
 
@@ -71,6 +81,15 @@ class SecureCaptureFragment : Fragment() {
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { /* permissions handled in Compose state */ }
+
+    // Gallery picker result holder — consumed by the Compose layer
+    private var galleryResultUri = mutableStateOf<Uri?>(null)
+
+    private val galleryLauncher = registerForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        galleryResultUri.value = uri
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -89,6 +108,12 @@ class SecureCaptureFragment : Fragment() {
                         )
                     )
                 },
+                onPickGallery = {
+                    galleryLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                },
+                galleryResultUri = galleryResultUri,
             )
         }
     }
@@ -117,6 +142,8 @@ private fun SecureCaptureScreen(
     onEvidence: (SecureEvidence) -> Unit,
     onClose: () -> Unit,
     requestPermissions: () -> Unit,
+    onPickGallery: () -> Unit,
+    galleryResultUri: MutableState<Uri?>,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -129,6 +156,7 @@ private fun SecureCaptureScreen(
     ) == PackageManager.PERMISSION_GRANTED
 
     var capturing by remember { mutableStateOf(false) }
+    var signing by remember { mutableStateOf(false) }
     var flashOn by remember { mutableStateOf(false) }
     var useFront by remember { mutableStateOf(false) }
     var previewEvidence by remember { mutableStateOf<SecureEvidence?>(null) }
@@ -136,6 +164,26 @@ private fun SecureCaptureScreen(
 
     val imageCapture = remember { ImageCapture.Builder().build() }
     val coroutineScope = rememberCoroutineScope()
+
+    // Observe gallery pick results
+    val pickedUri = galleryResultUri.value
+    LaunchedEffect(pickedUri) {
+        if (pickedUri != null) {
+            galleryResultUri.value = null
+            capturing = true
+            signing = true
+            try {
+                val (evidence, bytes) = processGalleryUri(context, pickedUri)
+                previewEvidence = evidence
+                previewBytes = bytes
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                capturing = false
+                signing = false
+            }
+        }
+    }
 
     // Permission gate
     if (!hasCameraPerm || !hasLocPerm) {
@@ -176,33 +224,106 @@ private fun SecureCaptureScreen(
                         bitmap = bitmap.asImageBitmap(),
                         contentDescription = "Captured evidence",
                         modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit,
                     )
                 }
-                // Watermark
+                // Gradient overlay
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .align(Alignment.TopCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color.Black.copy(alpha = 0.4f), Color.Transparent)
+                            )
+                        )
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f))
+                            )
+                        )
+                )
+
+                // Top: branding + signed badge
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
+                    // MULTANDO badge
                     Text(
-                        "🛡 MULTANDO",
-                        color = Color.White.copy(alpha = 0.75f),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
+                        "MULTANDO",
+                        color = Color.White,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 12.sp,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier
+                            .background(
+                                Color.Red.copy(alpha = 0.8f),
+                                RoundedCornerShape(6.dp),
+                            )
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
                     )
+                    // Signed badge
                     Text(
-                        "✓ VERIFIED",
+                        "SIGNED",
                         color = Color.White,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier
                             .background(
-                                Color.Green.copy(alpha = 0.6f),
+                                Color.Green.copy(alpha = 0.8f),
                                 RoundedCornerShape(6.dp),
                             )
-                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
                     )
+                }
+
+                // Bottom: capture method + metadata
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(12.dp),
+                ) {
+                    // Capture method
+                    Text(
+                        text = if (previewEvidence!!.captureMethod == "camera") "Camera" else "Gallery",
+                        color = Color.White,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier
+                            .background(
+                                Color(0xFF6366F1).copy(alpha = 0.7f),
+                                RoundedCornerShape(4.dp),
+                            )
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            formatTimestamp(previewEvidence!!.timestamp),
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            formatGps(previewEvidence!!.latitude, previewEvidence!!.longitude),
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
                 }
             }
             Row(
@@ -254,12 +375,40 @@ private fun SecureCaptureScreen(
 
         // Live watermark
         Text(
-            "🛡 MULTANDO",
+            "MULTANDO",
             color = Color.White.copy(alpha = 0.75f),
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            modifier = Modifier.padding(12.dp),
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 12.sp,
+            letterSpacing = 1.sp,
+            modifier = Modifier
+                .padding(12.dp)
+                .background(
+                    Color.Red.copy(alpha = 0.8f),
+                    RoundedCornerShape(6.dp),
+                )
+                .padding(horizontal = 8.dp, vertical = 4.dp),
         )
+
+        // Signing overlay
+        if (signing) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = Color.White)
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Signing evidence...",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+        }
 
         // Controls
         Row(
@@ -288,7 +437,11 @@ private fun SecureCaptureScreen(
                     .size(48.dp)
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.15f))
-                    .clickable { flashOn = !flashOn; imageCapture.flashMode = if (flashOn) ImageCapture.FLASH_MODE_ON else ImageCapture.FLASH_MODE_OFF },
+                    .clickable {
+                        flashOn = !flashOn
+                        imageCapture.flashMode =
+                            if (flashOn) ImageCapture.FLASH_MODE_ON else ImageCapture.FLASH_MODE_OFF
+                    },
                 contentAlignment = Alignment.Center,
             ) { Text(if (flashOn) "⚡" else "⚡\u0336", color = Color.White, fontSize = 20.sp) }
 
@@ -303,6 +456,7 @@ private fun SecureCaptureScreen(
                                 context = context,
                                 imageCapture = imageCapture,
                                 onCapturing = { capturing = it },
+                                onSigning = { signing = it },
                                 onResult = { evidence, bytes ->
                                     previewEvidence = evidence
                                     previewBytes = bytes
@@ -312,18 +466,11 @@ private fun SecureCaptureScreen(
                     },
                 contentAlignment = Alignment.Center,
             ) {
-                // Outer ring
                 Box(
                     modifier = Modifier
                         .size(72.dp)
                         .clip(CircleShape)
-                        .background(Color.Transparent)
-                        .then(
-                            Modifier.background(
-                                Color.Transparent,
-                                CircleShape,
-                            )
-                        ),
+                        .background(Color.Transparent),
                 )
                 if (capturing) {
                     CircularProgressIndicator(
@@ -341,7 +488,17 @@ private fun SecureCaptureScreen(
                 }
             }
 
-            // Flip
+            // Gallery button
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.15f))
+                    .clickable { onPickGallery() },
+                contentAlignment = Alignment.Center,
+            ) { Text("🖼", fontSize = 20.sp) }
+
+            // Flip camera
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -355,16 +512,39 @@ private fun SecureCaptureScreen(
 }
 
 // ---------------------------------------------------------------------------
-// Capture logic
+// Formatting helpers
+// ---------------------------------------------------------------------------
+
+private fun formatTimestamp(iso: String): String {
+    return try {
+        val instant = Instant.parse(iso)
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+        sdf.timeZone = TimeZone.getTimeZone("UTC")
+        sdf.format(Date.from(instant)) + " UTC"
+    } catch (_: Exception) {
+        iso
+    }
+}
+
+private fun formatGps(lat: Double, lon: Double): String {
+    val latDir = if (lat >= 0) "N" else "S"
+    val lonDir = if (lon >= 0) "E" else "W"
+    return "%.4f%s %.4f%s".format(abs(lat), latDir, abs(lon), lonDir)
+}
+
+// ---------------------------------------------------------------------------
+// Camera capture logic
 // ---------------------------------------------------------------------------
 
 private suspend fun captureEvidence(
     context: Context,
     imageCapture: ImageCapture,
     onCapturing: (Boolean) -> Unit,
+    onSigning: (Boolean) -> Unit,
     onResult: (SecureEvidence, ByteArray) -> Unit,
 ) {
     onCapturing(true)
+    onSigning(true)
     try {
         // Motion detection
         var motionDetected = false
@@ -423,7 +603,7 @@ private suspend fun captureEvidence(
         }
 
         // Wait for motion window
-        kotlinx.coroutines.delay(2000)
+        delay(2000)
         sensorManager.unregisterListener(listener)
 
         val imageBytes = tempFile.readBytes()
@@ -439,6 +619,7 @@ private suspend fun captureEvidence(
             altitude = location?.altitude,
             accuracy = location?.accuracy?.toDouble() ?: 0.0,
             motionVerified = motionDetected,
+            captureMethod = "camera",
         )
 
         onResult(evidence, imageBytes)
@@ -446,5 +627,61 @@ private suspend fun captureEvidence(
         e.printStackTrace()
     } finally {
         onCapturing(false)
+        onSigning(false)
     }
+}
+
+// ---------------------------------------------------------------------------
+// Gallery processing logic
+// ---------------------------------------------------------------------------
+
+private suspend fun processGalleryUri(
+    context: Context,
+    uri: Uri,
+): Pair<SecureEvidence, ByteArray> {
+    // Read image bytes from content URI
+    val imageBytes = withContext(Dispatchers.IO) {
+        context.contentResolver.openInputStream(uri)?.readBytes()
+            ?: throw IllegalStateException("Cannot read gallery image")
+    }
+
+    // GPS
+    val location = withContext(Dispatchers.IO) {
+        suspendCoroutine<Location?> { cont ->
+            val client = LocationServices.getFusedLocationProviderClient(context)
+            try {
+                client.getCurrentLocation(
+                    Priority.PRIORITY_HIGH_ACCURACY,
+                    CancellationTokenSource().token,
+                ).addOnSuccessListener { cont.resume(it) }
+                    .addOnFailureListener { cont.resume(null) }
+            } catch (e: SecurityException) {
+                cont.resume(null)
+            }
+        }
+    }
+
+    // Save to temp file for URI
+    val tempFile = withContext(Dispatchers.IO) {
+        File.createTempFile("evidence_gallery_", ".jpg", context.cacheDir).also {
+            it.writeBytes(imageBytes)
+        }
+    }
+
+    val timestamp = Instant.now().toString()
+
+    val evidence = EvidenceSigner.signEvidence(
+        context = context,
+        imageBytes = imageBytes,
+        imageUri = tempFile.absolutePath,
+        timestamp = timestamp,
+        latitude = location?.latitude ?: 0.0,
+        longitude = location?.longitude ?: 0.0,
+        altitude = location?.altitude,
+        accuracy = location?.accuracy?.toDouble() ?: 0.0,
+        motionVerified = false,
+        captureMethod = "gallery",
+    )
+
+    return evidence to imageBytes
 }

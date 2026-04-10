@@ -120,6 +120,9 @@ object EvidenceSigner {
 
     /**
      * Sign evidence and return a complete [SecureEvidence].
+     *
+     * @param captureMethod `"camera"` or `"gallery"` depending on how the
+     *   image was obtained.
      */
     fun signEvidence(
         context: Context,
@@ -131,6 +134,7 @@ object EvidenceSigner {
         altitude: Double?,
         accuracy: Double,
         motionVerified: Boolean,
+        captureMethod: String = "camera",
     ): SecureEvidence {
         val deviceId = getDeviceId(context)
         val deviceKey = getDeviceKey(context)
@@ -156,6 +160,7 @@ object EvidenceSigner {
             accuracy = accuracy,
             deviceId = deviceId,
             appVersion = appVersion,
+            captureMethod = captureMethod,
             motionVerified = motionVerified,
             signature = signature,
         )

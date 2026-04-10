@@ -188,6 +188,7 @@ class ReportSummary {
     required this.source,
     required this.createdAt,
     this.description,
+    this.location,
   });
 
   factory ReportSummary.fromJson(Map<String, dynamic> json) {
@@ -205,6 +206,9 @@ class ReportSummary {
       ),
       createdAt: DateTime.parse(json['created_at'] as String),
       description: json['description'] as String?,
+      location: json['location'] != null
+          ? LocationData.fromJson(json['location'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -215,6 +219,7 @@ class ReportSummary {
   final ReportSource source;
   final DateTime createdAt;
   final String? description;
+  final LocationData? location;
 
   Map<String, dynamic> toJson() => {
         'id': id,

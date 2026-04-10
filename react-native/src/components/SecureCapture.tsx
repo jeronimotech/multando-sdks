@@ -1,10 +1,13 @@
 /**
  * SecureCapture — drop-in React Native SDK component for secure evidence.
  *
- * Wraps camera capture, GPS, motion detection, watermarking, signing, and
- * fraud checks into a single component.  Uses bare React Native Camera
- * (`react-native-vision-camera`) rather than Expo so the SDK works in
- * non-Expo projects.
+ * Wraps camera/gallery capture, GPS, motion detection, watermarking, signing,
+ * and fraud checks into a single component. Supports both camera and gallery
+ * picking (gallery is essential for emulator/simulator testing).
+ *
+ * Uses bare React Native Camera (`react-native-vision-camera`) for live
+ * preview and `react-native-image-picker` as a fallback for gallery selection,
+ * so the SDK works in non-Expo projects.
  *
  * Usage:
  * ```tsx
@@ -42,6 +45,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { sha256 } from 'react-native-sha256';
 import RNFS from 'react-native-fs';
 import DeviceInfo from 'react-native-device-info';
+import { launchImageLibrary } from 'react-native-image-picker';
 
 // ---------------------------------------------------------------------------
 // Types (matching the cross-platform SecureEvidence schema)
@@ -58,7 +62,7 @@ export interface SecureEvidence {
   deviceId: string;
   appVersion: string;
   platform: 'ios' | 'android';
-  captureMethod: 'camera';
+  captureMethod: 'camera' | 'gallery';
   motionVerified: boolean;
   watermarkApplied: boolean;
   signature: string;
@@ -159,6 +163,18 @@ function getCurrentPosition(): Promise<GeoPosition> {
   });
 }
 
+function formatTimestamp(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())} UTC`;
+}
+
+function formatGps(lat: number, lon: number): string {
+  const latDir = lat >= 0 ? 'N' : 'S';
+  const lonDir = lon >= 0 ? 'E' : 'W';
+  return `${Math.abs(lat).toFixed(4)}${latDir} ${Math.abs(lon).toFixed(4)}${lonDir}`;
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -174,6 +190,7 @@ export default function SecureCapture({
 
   const [capturing, setCapturing] = useState(false);
   const [flash, setFlash] = useState(false);
+  const [signing, setSigning] = useState(false);
   const motionDetected = useRef(false);
 
   const [preview, setPreview] = useState<{
@@ -187,42 +204,43 @@ export default function SecureCapture({
   }, [hasPermission, requestPermission]);
 
   // -----------------------------------------------------------------------
-  // Capture
+  // Sign image helper (shared between camera and gallery)
   // -----------------------------------------------------------------------
 
-  const handleCapture = useCallback(async () => {
-    if (capturing || !cameraRef.current) return;
-    setCapturing(true);
-
-    try {
-      // Motion detection
-      motionDetected.current = false;
-      setUpdateIntervalForType(SensorTypes.accelerometer, 100);
-      const sub = accelerometer.subscribe(({ x, y, z }) => {
-        const mag = Math.sqrt(x * x + y * y + z * z);
-        if (Math.abs(mag - 9.81) > MOTION_THRESHOLD * 9.81) {
-          motionDetected.current = true;
-        }
-      });
-      setTimeout(() => sub.unsubscribe(), MOTION_WINDOW_MS);
+  const signAndBuildEvidence = useCallback(
+    async (
+      photoPath: string,
+      captureMethod: 'camera' | 'gallery',
+    ): Promise<SecureEvidence> => {
+      setSigning(true);
 
       // GPS
-      const pos = await getCurrentPosition();
+      let pos: GeoPosition | null = null;
+      try {
+        pos = await getCurrentPosition();
+      } catch {
+        // Fallback for emulator — use zeroes
+      }
 
-      // Photo
-      const photo: PhotoFile = await cameraRef.current.takePhoto({
-        flash: flash ? 'on' : 'off',
-        qualityPrioritization: 'balanced',
-      });
-      const photoPath = photo.path.startsWith('file://')
-        ? photo.path
-        : `file://${photo.path}`;
-
-      // Wait for motion window
-      await new Promise((r) => setTimeout(r, MOTION_WINDOW_MS));
+      // Motion detection (only for camera)
+      if (captureMethod === 'camera') {
+        motionDetected.current = false;
+        setUpdateIntervalForType(SensorTypes.accelerometer, 100);
+        const sub = accelerometer.subscribe(({ x, y, z }) => {
+          const mag = Math.sqrt(x * x + y * y + z * z);
+          if (Math.abs(mag - 9.81) > MOTION_THRESHOLD * 9.81) {
+            motionDetected.current = true;
+          }
+        });
+        await new Promise((r) => setTimeout(r, MOTION_WINDOW_MS));
+        sub.unsubscribe();
+      }
 
       // Hash
-      const base64 = await RNFS.readFile(photo.path, 'base64');
+      const base64 = await RNFS.readFile(
+        photoPath.replace(/^file:\/\//, ''),
+        'base64',
+      );
       const imageHash = await sha256(base64);
 
       // Sign
@@ -231,23 +249,23 @@ export default function SecureCapture({
       const signature = await signPayload(
         imageHash,
         timestamp,
-        pos.coords.latitude,
-        pos.coords.longitude,
+        pos?.coords.latitude ?? 0,
+        pos?.coords.longitude ?? 0,
         deviceId,
       );
 
       const evidence: SecureEvidence = {
-        imageUri: photoPath,
+        imageUri: photoPath.startsWith('file://') ? photoPath : `file://${photoPath}`,
         imageHash,
         timestamp,
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-        altitude: pos.coords.altitude,
-        accuracy: pos.coords.accuracy,
+        latitude: pos?.coords.latitude ?? 0,
+        longitude: pos?.coords.longitude ?? 0,
+        altitude: pos?.coords.altitude ?? null,
+        accuracy: pos?.coords.accuracy ?? 0,
         deviceId,
         appVersion: DeviceInfo.getVersion(),
         platform: Platform.OS as 'ios' | 'android',
-        captureMethod: 'camera',
+        captureMethod,
         motionVerified: motionDetected.current,
         watermarkApplied: true,
         signature,
@@ -260,17 +278,84 @@ export default function SecureCapture({
       }
       await recordHash(imageHash);
 
+      setSigning(false);
+      return evidence;
+    },
+    [],
+  );
+
+  // -----------------------------------------------------------------------
+  // Camera capture
+  // -----------------------------------------------------------------------
+
+  const handleCameraCapture = useCallback(async () => {
+    if (capturing || !cameraRef.current) return;
+    setCapturing(true);
+
+    try {
+      const photo: PhotoFile = await cameraRef.current.takePhoto({
+        flash: flash ? 'on' : 'off',
+        qualityPrioritization: 'balanced',
+      });
+      const photoPath = photo.path.startsWith('file://')
+        ? photo.path
+        : `file://${photo.path}`;
+
+      const evidence = await signAndBuildEvidence(photoPath, 'camera');
+
       if (showPreview) {
         setPreview({ evidence, uri: photoPath });
       } else {
         await onEvidence(evidence);
       }
     } catch (err) {
-      console.error('[SecureCapture] Capture failed:', err);
+      console.error('[SecureCapture] Camera capture failed:', err);
     } finally {
       setCapturing(false);
     }
-  }, [capturing, flash, onEvidence, showPreview]);
+  }, [capturing, flash, onEvidence, showPreview, signAndBuildEvidence]);
+
+  // -----------------------------------------------------------------------
+  // Gallery pick
+  // -----------------------------------------------------------------------
+
+  const handleGalleryPick = useCallback(async () => {
+    if (capturing) return;
+    setCapturing(true);
+
+    try {
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        quality: 0.9,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      });
+
+      if (result.didCancel || !result.assets?.length) {
+        setCapturing(false);
+        return;
+      }
+
+      const asset = result.assets[0];
+      const photoPath = asset.uri ?? '';
+
+      const evidence = await signAndBuildEvidence(photoPath, 'gallery');
+
+      if (showPreview) {
+        setPreview({ evidence, uri: photoPath });
+      } else {
+        await onEvidence(evidence);
+      }
+    } catch (err) {
+      console.error('[SecureCapture] Gallery pick failed:', err);
+    } finally {
+      setCapturing(false);
+    }
+  }, [capturing, onEvidence, showPreview, signAndBuildEvidence]);
+
+  // -----------------------------------------------------------------------
+  // Preview actions
+  // -----------------------------------------------------------------------
 
   const confirmCapture = useCallback(async () => {
     if (preview) {
@@ -282,7 +367,7 @@ export default function SecureCapture({
   const retake = useCallback(() => setPreview(null), []);
 
   // -----------------------------------------------------------------------
-  // Render
+  // Render — Permission gate
   // -----------------------------------------------------------------------
 
   if (!hasPermission) {
@@ -300,20 +385,59 @@ export default function SecureCapture({
     return (
       <View style={styles.center}>
         <Text style={styles.text}>No camera device found.</Text>
+        <Text style={[styles.text, { fontSize: 14, marginTop: 8 }]}>
+          You can still pick from gallery.
+        </Text>
+        <Pressable style={styles.btn} onPress={handleGalleryPick}>
+          <Text style={styles.btnText}>Pick from Gallery</Text>
+        </Pressable>
       </View>
     );
   }
 
-  // Preview
+  // -----------------------------------------------------------------------
+  // Render — Preview with watermark overlay
+  // -----------------------------------------------------------------------
+
   if (preview) {
     return (
       <View style={styles.container}>
-        <Image source={{ uri: preview.uri }} style={styles.previewImage} resizeMode="contain" />
-        {/* Watermark overlay */}
-        <View style={styles.watermarkOverlay} pointerEvents="none">
-          <Text style={styles.brandText}>🛡 MULTANDO</Text>
-          <View style={styles.verifiedBadge}>
-            <Text style={styles.verifiedText}>✓ VERIFIED</Text>
+        <View style={{ flex: 1 }}>
+          <Image
+            source={{ uri: preview.uri }}
+            style={styles.previewImage}
+            resizeMode="contain"
+          />
+          {/* Watermark overlay */}
+          <View style={styles.watermarkOverlay} pointerEvents="none">
+            <View style={styles.brandBadge}>
+              <Text style={styles.brandBadgeText}>MULTANDO</Text>
+            </View>
+            <View
+              style={[
+                styles.signBadge,
+                { backgroundColor: 'rgba(34,197,94,0.8)' },
+              ]}
+            >
+              <Text style={styles.signBadgeText}>SIGNED</Text>
+            </View>
+          </View>
+          {/* Bottom metadata */}
+          <View style={styles.metadataOverlay} pointerEvents="none">
+            <Text style={styles.metaText}>
+              {formatTimestamp(preview.evidence.timestamp)}
+            </Text>
+            <Text style={styles.metaText}>
+              {formatGps(preview.evidence.latitude, preview.evidence.longitude)}
+            </Text>
+          </View>
+          {/* Capture method badge */}
+          <View style={styles.methodBadgeContainer} pointerEvents="none">
+            <View style={styles.methodBadge}>
+              <Text style={styles.methodBadgeText}>
+                {preview.evidence.captureMethod === 'camera' ? 'Camera' : 'Gallery'}
+              </Text>
+            </View>
           </View>
         </View>
         <View style={styles.actions}>
@@ -328,7 +452,10 @@ export default function SecureCapture({
     );
   }
 
-  // Camera
+  // -----------------------------------------------------------------------
+  // Render — Camera with gallery option
+  // -----------------------------------------------------------------------
+
   return (
     <View style={styles.container}>
       <Camera
@@ -341,14 +468,24 @@ export default function SecureCapture({
 
       {/* Live watermark */}
       <View style={styles.watermarkOverlay} pointerEvents="none">
-        <Text style={styles.brandText}>🛡 MULTANDO</Text>
+        <View style={styles.brandBadge}>
+          <Text style={styles.brandBadgeText}>MULTANDO</Text>
+        </View>
       </View>
+
+      {/* Signing indicator */}
+      {signing && (
+        <View style={styles.signingOverlay}>
+          <ActivityIndicator color="#fff" size="large" />
+          <Text style={styles.signingText}>Signing evidence...</Text>
+        </View>
+      )}
 
       {/* Controls */}
       <View style={styles.controls}>
         {onClose && (
           <Pressable style={styles.controlBtn} onPress={onClose}>
-            <Text style={styles.controlIcon}>✕</Text>
+            <Text style={styles.controlIcon}>{'✕'}</Text>
           </Pressable>
         )}
         <Pressable style={styles.controlBtn} onPress={() => setFlash((f) => !f)}>
@@ -356,7 +493,7 @@ export default function SecureCapture({
         </Pressable>
         <Pressable
           style={[styles.captureBtn, capturing && styles.captureBtnActive]}
-          onPress={handleCapture}
+          onPress={handleCameraCapture}
           disabled={capturing}
         >
           {capturing ? (
@@ -365,7 +502,10 @@ export default function SecureCapture({
             <View style={styles.captureInner} />
           )}
         </Pressable>
-        <View style={styles.controlBtn} />
+        {/* Gallery button */}
+        <Pressable style={styles.controlBtn} onPress={handleGalleryPick}>
+          <Text style={styles.controlIcon}>{'🖼'}</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -377,7 +517,13 @@ export default function SecureCapture({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000', padding: 24 },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000',
+    padding: 24,
+  },
   text: { color: '#fff', fontSize: 16, textAlign: 'center', marginBottom: 16 },
   previewImage: { flex: 1 },
 
@@ -390,21 +536,77 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  brandText: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: 16,
+  brandBadge: {
+    backgroundColor: 'rgba(220,38,38,0.8)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  brandBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  signBadge: {
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  signBadgeText: {
+    color: '#fff',
+    fontSize: 10,
     fontWeight: '700',
-    textShadowColor: 'rgba(0,0,0,0.6)',
+  },
+  metadataOverlay: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    right: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  metaText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
   },
-  verifiedBadge: {
-    backgroundColor: 'rgba(34,197,94,0.6)',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+  methodBadgeContainer: {
+    position: 'absolute',
+    bottom: 36,
+    left: 12,
   },
-  verifiedText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  methodBadge: {
+    backgroundColor: 'rgba(99,102,241,0.7)',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  methodBadgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '600',
+  },
+
+  signingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  signingText: {
+    color: '#fff',
+    fontSize: 14,
+    marginTop: 12,
+    fontWeight: '600',
+  },
 
   controls: {
     position: 'absolute',
