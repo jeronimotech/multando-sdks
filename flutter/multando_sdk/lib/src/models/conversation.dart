@@ -87,16 +87,38 @@ class SendMessageRequest {
     required this.content,
     this.imageBase64,
     this.imageMediaType = 'image/jpeg',
+    this.imageHash,
+    this.imageSignature,
+    this.imageTimestamp,
+    this.imageLatitude,
+    this.imageLongitude,
+    this.deviceId,
+    this.captureMethod,
   });
 
   final String content;
   final String? imageBase64;
   final String imageMediaType;
+  // Evidence metadata from SDK signing
+  final String? imageHash;
+  final String? imageSignature;
+  final String? imageTimestamp;
+  final double? imageLatitude;
+  final double? imageLongitude;
+  final String? deviceId;
+  final String? captureMethod;
 
   Map<String, dynamic> toJson() => {
         'content': content,
         if (imageBase64 != null) 'image_base64': imageBase64,
         if (imageBase64 != null) 'image_media_type': imageMediaType,
+        if (imageHash != null) 'image_hash': imageHash,
+        if (imageSignature != null) 'image_signature': imageSignature,
+        if (imageTimestamp != null) 'image_timestamp': imageTimestamp,
+        if (imageLatitude != null) 'image_latitude': imageLatitude,
+        if (imageLongitude != null) 'image_longitude': imageLongitude,
+        if (deviceId != null) 'device_id': deviceId,
+        if (captureMethod != null) 'capture_method': captureMethod,
       };
 }
 
