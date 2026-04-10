@@ -24,7 +24,7 @@ export class ChatService {
 
   /** Create a new AI conversation. */
   async createConversation(): Promise<Conversation> {
-    const response = await this.http.post<Conversation>('/conversations');
+    const response = await this.http.post<Conversation>('/conversations', {});
     return response.data;
   }
 

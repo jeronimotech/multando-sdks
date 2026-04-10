@@ -13,7 +13,8 @@ public final class ChatService: Sendable {
     public func createConversation() async throws -> Conversation {
         try await httpClient.request(
             method: "POST",
-            path: "/api/v1/conversations"
+            path: "/api/v1/conversations",
+            body: [:] as [String: String]
         )
     }
 

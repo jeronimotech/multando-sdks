@@ -11,6 +11,7 @@ class ChatService {
   Future<Conversation> createConversation() async {
     final response = await _http.post<Map<String, dynamic>>(
       '/conversations',
+      data: {},
     );
     return Conversation.fromJson(response.data!);
   }

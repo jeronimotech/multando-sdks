@@ -13,7 +13,8 @@ class ChatService internal constructor(
     suspend fun createConversation(): Conversation =
         httpClient.request(
             method = "POST",
-            path = "/api/v1/conversations"
+            path = "/api/v1/conversations",
+            body = emptyMap<String, String>()
         )
 
     /** List all conversations for the current user. */
