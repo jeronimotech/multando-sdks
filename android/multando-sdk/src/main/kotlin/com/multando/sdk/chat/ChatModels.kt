@@ -30,7 +30,14 @@ data class ChatMessage(
 data class SendMessageRequest(
     val content: String,
     @SerialName("image_base64") val imageBase64: String? = null,
-    @SerialName("image_media_type") val imageMediaType: String? = null
+    @SerialName("image_media_type") val imageMediaType: String? = null,
+    @SerialName("image_hash") val imageHash: String? = null,
+    @SerialName("image_signature") val imageSignature: String? = null,
+    @SerialName("image_timestamp") val imageTimestamp: String? = null,
+    @SerialName("image_latitude") val imageLatitude: Double? = null,
+    @SerialName("image_longitude") val imageLongitude: Double? = null,
+    @SerialName("device_id") val deviceId: String? = null,
+    @SerialName("capture_method") val captureMethod: String? = null
 )
 
 @Serializable

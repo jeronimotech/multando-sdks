@@ -19,6 +19,13 @@ export interface SendMessageRequest {
   content: string;
   imageBase64?: string;
   imageMediaType?: string;
+  imageHash?: string;
+  imageSignature?: string;
+  imageTimestamp?: string;
+  imageLatitude?: number;
+  imageLongitude?: number;
+  deviceId?: string;
+  captureMethod?: string;
 }
 
 export interface ChatResponse {

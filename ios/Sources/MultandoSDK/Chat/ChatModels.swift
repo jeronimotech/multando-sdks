@@ -44,17 +44,49 @@ public struct SendMessageRequest: Codable, Sendable {
     public let content: String
     public let imageBase64: String?
     public let imageMediaType: String?
+    public let imageHash: String?
+    public let imageSignature: String?
+    public let imageTimestamp: String?
+    public let imageLatitude: Double?
+    public let imageLongitude: Double?
+    public let deviceId: String?
+    public let captureMethod: String?
 
-    public init(content: String, imageBase64: String? = nil, imageMediaType: String? = nil) {
+    public init(
+        content: String,
+        imageBase64: String? = nil,
+        imageMediaType: String? = nil,
+        imageHash: String? = nil,
+        imageSignature: String? = nil,
+        imageTimestamp: String? = nil,
+        imageLatitude: Double? = nil,
+        imageLongitude: Double? = nil,
+        deviceId: String? = nil,
+        captureMethod: String? = nil
+    ) {
         self.content = content
         self.imageBase64 = imageBase64
         self.imageMediaType = imageMediaType
+        self.imageHash = imageHash
+        self.imageSignature = imageSignature
+        self.imageTimestamp = imageTimestamp
+        self.imageLatitude = imageLatitude
+        self.imageLongitude = imageLongitude
+        self.deviceId = deviceId
+        self.captureMethod = captureMethod
     }
 
     enum CodingKeys: String, CodingKey {
         case content
         case imageBase64 = "image_base64"
         case imageMediaType = "image_media_type"
+        case imageHash = "image_hash"
+        case imageSignature = "image_signature"
+        case imageTimestamp = "image_timestamp"
+        case imageLatitude = "image_latitude"
+        case imageLongitude = "image_longitude"
+        case deviceId = "device_id"
+        case captureMethod = "capture_method"
     }
 }
 
