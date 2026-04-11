@@ -21,7 +21,14 @@ data class ReportCreate(
     val description: String,
     val location: LocationData,
     @SerialName("occurred_at") val occurredAt: String,
-    val source: ReportSource = ReportSource.SDK
+    val source: ReportSource = ReportSource.SDK,
+    @SerialName("evidence_image_base64") val evidenceImageBase64: String? = null,
+    @SerialName("evidence_media_type") val evidenceMediaType: String? = null,
+    @SerialName("evidence_image_hash") val evidenceImageHash: String? = null,
+    @SerialName("evidence_signature") val evidenceSignature: String? = null,
+    @SerialName("evidence_timestamp") val evidenceTimestamp: String? = null,
+    @SerialName("evidence_device_id") val evidenceDeviceId: String? = null,
+    @SerialName("evidence_capture_method") val evidenceCaptureMethod: String? = null
 )
 
 @Serializable

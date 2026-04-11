@@ -50,6 +50,13 @@ class ReportCreate {
     this.description,
     this.occurredAt,
     this.source = ReportSource.sdk,
+    this.evidenceImageBase64,
+    this.evidenceMediaType,
+    this.evidenceImageHash,
+    this.evidenceSignature,
+    this.evidenceTimestamp,
+    this.evidenceDeviceId,
+    this.evidenceCaptureMethod,
   });
 
   factory ReportCreate.fromJson(Map<String, dynamic> json) {
@@ -66,6 +73,13 @@ class ReportCreate {
         (e) => e.value == json['source'],
         orElse: () => ReportSource.sdk,
       ),
+      evidenceImageBase64: json['evidence_image_base64'] as String?,
+      evidenceMediaType: json['evidence_media_type'] as String?,
+      evidenceImageHash: json['evidence_image_hash'] as String?,
+      evidenceSignature: json['evidence_signature'] as String?,
+      evidenceTimestamp: json['evidence_timestamp'] as String?,
+      evidenceDeviceId: json['evidence_device_id'] as String?,
+      evidenceCaptureMethod: json['evidence_capture_method'] as String?,
     );
   }
 
@@ -77,6 +91,15 @@ class ReportCreate {
   final DateTime? occurredAt;
   final ReportSource source;
 
+  /// Optional signed evidence fields
+  final String? evidenceImageBase64;
+  final String? evidenceMediaType;
+  final String? evidenceImageHash;
+  final String? evidenceSignature;
+  final String? evidenceTimestamp;
+  final String? evidenceDeviceId;
+  final String? evidenceCaptureMethod;
+
   Map<String, dynamic> toJson() => {
         'infraction_id': int.tryParse(infractionId) ?? infractionId,
         'vehicle_plate': plateNumber,
@@ -85,6 +108,13 @@ class ReportCreate {
           'vehicle_type_id': int.parse(vehicleTypeId!),
         'incident_datetime': (occurredAt ?? DateTime.now()).toUtc().toIso8601String(),
         'source': source.value,
+        if (evidenceImageBase64 != null) 'evidence_image_base64': evidenceImageBase64,
+        if (evidenceMediaType != null) 'evidence_media_type': evidenceMediaType,
+        if (evidenceImageHash != null) 'evidence_image_hash': evidenceImageHash,
+        if (evidenceSignature != null) 'evidence_signature': evidenceSignature,
+        if (evidenceTimestamp != null) 'evidence_timestamp': evidenceTimestamp,
+        if (evidenceDeviceId != null) 'evidence_device_id': evidenceDeviceId,
+        if (evidenceCaptureMethod != null) 'evidence_capture_method': evidenceCaptureMethod,
       };
 }
 

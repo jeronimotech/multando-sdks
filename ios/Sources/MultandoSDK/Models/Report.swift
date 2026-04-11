@@ -29,6 +29,15 @@ public struct ReportCreate: Codable, Sendable {
     public let occurredAt: String
     public let source: ReportSource
 
+    /// Optional signed evidence fields
+    public let evidenceImageBase64: String?
+    public let evidenceMediaType: String?
+    public let evidenceImageHash: String?
+    public let evidenceSignature: String?
+    public let evidenceTimestamp: String?
+    public let evidenceDeviceId: String?
+    public let evidenceCaptureMethod: String?
+
     public init(
         infractionId: String,
         vehicleTypeId: String,
@@ -36,7 +45,14 @@ public struct ReportCreate: Codable, Sendable {
         description: String,
         location: LocationData,
         occurredAt: String,
-        source: ReportSource = .sdk
+        source: ReportSource = .sdk,
+        evidenceImageBase64: String? = nil,
+        evidenceMediaType: String? = nil,
+        evidenceImageHash: String? = nil,
+        evidenceSignature: String? = nil,
+        evidenceTimestamp: String? = nil,
+        evidenceDeviceId: String? = nil,
+        evidenceCaptureMethod: String? = nil
     ) {
         self.infractionId = infractionId
         self.vehicleTypeId = vehicleTypeId
@@ -45,6 +61,13 @@ public struct ReportCreate: Codable, Sendable {
         self.location = location
         self.occurredAt = occurredAt
         self.source = source
+        self.evidenceImageBase64 = evidenceImageBase64
+        self.evidenceMediaType = evidenceMediaType
+        self.evidenceImageHash = evidenceImageHash
+        self.evidenceSignature = evidenceSignature
+        self.evidenceTimestamp = evidenceTimestamp
+        self.evidenceDeviceId = evidenceDeviceId
+        self.evidenceCaptureMethod = evidenceCaptureMethod
     }
 
     enum CodingKeys: String, CodingKey {
@@ -55,6 +78,13 @@ public struct ReportCreate: Codable, Sendable {
         case location
         case occurredAt = "occurred_at"
         case source
+        case evidenceImageBase64 = "evidence_image_base64"
+        case evidenceMediaType = "evidence_media_type"
+        case evidenceImageHash = "evidence_image_hash"
+        case evidenceSignature = "evidence_signature"
+        case evidenceTimestamp = "evidence_timestamp"
+        case evidenceDeviceId = "evidence_device_id"
+        case evidenceCaptureMethod = "evidence_capture_method"
     }
 }
 

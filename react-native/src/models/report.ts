@@ -19,6 +19,15 @@ export interface ReportCreate {
   description: string;
   location: LocationData;
   occurredAt?: string;
+
+  /** Optional signed evidence fields */
+  evidenceImageBase64?: string;
+  evidenceMediaType?: string;
+  evidenceImageHash?: string;
+  evidenceSignature?: string;
+  evidenceTimestamp?: string;
+  evidenceDeviceId?: string;
+  evidenceCaptureMethod?: string;
 }
 
 export interface ReportSummary {
