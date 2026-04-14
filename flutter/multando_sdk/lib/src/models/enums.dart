@@ -35,6 +35,7 @@ enum VehicleCategory {
 }
 
 enum EvidenceType {
+  image('image'),
   photo('photo'),
   video('video'),
   audio('audio'),

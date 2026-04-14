@@ -126,6 +126,7 @@ class ChatResponse {
   const ChatResponse({
     required this.message,
     this.toolCalls = const [],
+    this.quickReplies = const [],
   });
 
   factory ChatResponse.fromJson(Map<String, dynamic> json) {
@@ -136,14 +137,37 @@ class ChatResponse {
               .map((e) => e as Map<String, dynamic>)
               .toList()
           : const [],
+      quickReplies: json['quick_replies'] != null
+          ? (json['quick_replies'] as List)
+              .map((e) => QuickReply.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : const [],
     );
   }
 
   final ChatMessage message;
   final List<Map<String, dynamic>> toolCalls;
+  final List<QuickReply> quickReplies;
 
   Map<String, dynamic> toJson() => {
         'message': message.toJson(),
         'tool_calls': toolCalls,
+        'quick_replies': quickReplies.map((q) => q.toJson()).toList(),
       };
+}
+
+class QuickReply {
+  const QuickReply({required this.label, required this.value});
+
+  factory QuickReply.fromJson(Map<String, dynamic> json) {
+    return QuickReply(
+      label: json['label'] as String,
+      value: (json['value'] ?? json['label']) as String,
+    );
+  }
+
+  final String label;
+  final String value;
+
+  Map<String, dynamic> toJson() => {'label': label, 'value': value};
 }

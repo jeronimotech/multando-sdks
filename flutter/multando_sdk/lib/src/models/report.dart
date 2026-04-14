@@ -163,8 +163,8 @@ class ReportDetail {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : null,
-      evidence: json['evidence'] != null
-          ? (json['evidence'] as List)
+      evidence: (json['evidences'] ?? json['evidence']) != null
+          ? ((json['evidences'] ?? json['evidence']) as List)
               .map((e) =>
                   EvidenceResponse.fromJson(e as Map<String, dynamic>))
               .toList()

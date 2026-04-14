@@ -8,6 +8,14 @@ class EvidenceService {
 
   final MultandoHttpClient _http;
 
+  /// Get a presigned URL for private evidence access.
+  Future<String> getPresignedUrl(int evidenceId) async {
+    final response = await _http.get<Map<String, dynamic>>(
+      '/reports/evidence/$evidenceId/url',
+    );
+    return response.data!['url'] as String;
+  }
+
   /// Add evidence to an existing report.
   ///
   /// The API accepts `type`, `url`, and `mime_type` as query parameters.

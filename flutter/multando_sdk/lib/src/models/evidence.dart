@@ -41,14 +41,14 @@ class EvidenceResponse {
 
   factory EvidenceResponse.fromJson(Map<String, dynamic> json) {
     return EvidenceResponse(
-      id: json['id'] as String,
-      reportId: json['report_id'] as String,
+      id: json['id'].toString(),
+      reportId: (json['report_id'] ?? '').toString(),
       type: EvidenceType.values.firstWhere(
         (e) => e.value == json['type'],
-        orElse: () => EvidenceType.photo,
+        orElse: () => EvidenceType.image,
       ),
-      url: json['url'] as String,
-      mimeType: json['mime_type'] as String,
+      url: (json['url'] ?? '') as String,
+      mimeType: (json['mime_type'] ?? 'image/jpeg') as String,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
