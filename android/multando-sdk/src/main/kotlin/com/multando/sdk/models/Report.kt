@@ -44,6 +44,7 @@ data class ReportDetail(
     val status: ReportStatus,
     val source: ReportSource,
     val evidence: List<EvidenceResponse>? = null,
+    @SerialName("reporter_display_name") val reporterDisplayName: String? = null,
     @SerialName("created_at") val createdAt: String,
     @SerialName("updated_at") val updatedAt: String
 )

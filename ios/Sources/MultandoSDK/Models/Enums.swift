@@ -8,6 +8,11 @@ public enum ReportStatus: String, Codable, Sendable {
     case rejected
     case appealed
     case resolved
+    /// The community (via votes / reputation-weighted validation) has
+    /// flagged the report as credible, but no authority has acted on it.
+    case communityVerified = "community_verified"
+    /// The report has been forwarded to an authority for formal review.
+    case authorityReview = "authority_review"
 }
 
 /// Source that originated a report.

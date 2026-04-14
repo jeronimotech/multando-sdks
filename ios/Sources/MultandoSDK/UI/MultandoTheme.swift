@@ -40,18 +40,24 @@ public enum MultandoTheme {
             return warning
         case .resolved:
             return success
+        case .communityVerified:
+            return success
+        case .authorityReview:
+            return warning
         }
     }
 
     /// Human-readable label for a report status.
     public static func statusLabel(for status: ReportStatus) -> String {
         switch status {
-        case .pending:      return "Pending"
-        case .underReview:  return "Under Review"
-        case .verified:     return "Verified"
-        case .rejected:     return "Rejected"
-        case .appealed:     return "Appealed"
-        case .resolved:     return "Resolved"
+        case .pending:           return "Pending"
+        case .underReview:       return "Under Review"
+        case .verified:          return "Verified"
+        case .rejected:          return "Rejected"
+        case .appealed:          return "Appealed"
+        case .resolved:          return "Resolved"
+        case .communityVerified: return "Community Verified"
+        case .authorityReview:   return "Authority Review"
         }
     }
 }

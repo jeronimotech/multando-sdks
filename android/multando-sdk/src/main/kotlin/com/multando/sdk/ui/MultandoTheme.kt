@@ -38,6 +38,8 @@ object MultandoColors {
     fun statusColor(status: ReportStatus): Color = when (status) {
         ReportStatus.PENDING -> Warning
         ReportStatus.UNDER_REVIEW -> Warning
+        ReportStatus.COMMUNITY_VERIFIED -> Primary
+        ReportStatus.AUTHORITY_REVIEW -> Warning
         ReportStatus.VERIFIED -> Success
         ReportStatus.REJECTED -> Danger
         ReportStatus.APPEALED -> Warning
@@ -50,6 +52,8 @@ object MultandoColors {
     fun statusBackgroundColor(status: ReportStatus): Color = when (status) {
         ReportStatus.PENDING -> WarningLight
         ReportStatus.UNDER_REVIEW -> WarningLight
+        ReportStatus.COMMUNITY_VERIFIED -> PrimaryLight
+        ReportStatus.AUTHORITY_REVIEW -> WarningLight
         ReportStatus.VERIFIED -> SuccessLight
         ReportStatus.REJECTED -> DangerLight
         ReportStatus.APPEALED -> WarningLight
@@ -62,6 +66,8 @@ object MultandoColors {
     fun statusLabel(status: ReportStatus): String = when (status) {
         ReportStatus.PENDING -> "Pending"
         ReportStatus.UNDER_REVIEW -> "Under Review"
+        ReportStatus.COMMUNITY_VERIFIED -> "Community Verified"
+        ReportStatus.AUTHORITY_REVIEW -> "Authority Review"
         ReportStatus.VERIFIED -> "Verified"
         ReportStatus.REJECTED -> "Rejected"
         ReportStatus.APPEALED -> "Appealed"

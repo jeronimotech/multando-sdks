@@ -56,3 +56,46 @@ export class MultandoAuthError extends MultandoError {
     this.isExpired = isExpired;
   }
 }
+
+/**
+ * Thrown when the backend returns HTTP 429 with a structured
+ * ``error: "rate_limit_exceeded"`` body.
+ *
+ * ``scope`` mirrors the backend ``limit`` field — values include
+ * ``reports_per_hour`` and ``reports_per_day`` (see
+ * ``multando-backend/app/services/rate_limiter.py``). Apps typically
+ * branch on ``scope`` to show a localized hourly/daily message.
+ */
+export class RateLimitError extends MultandoError {
+  public readonly statusCode: number = 429;
+  public readonly retryAfterSeconds: number;
+  public readonly scope: string;
+
+  constructor(message: string, retryAfterSeconds: number, scope: string) {
+    super(message, 'RATE_LIMIT');
+    this.name = 'RateLimitError';
+    this.retryAfterSeconds = retryAfterSeconds;
+    this.scope = scope;
+  }
+}
+
+/**
+ * Thrown when the backend blocks a report because the same plate was
+ * already reported (either by this user or globally near this
+ * location) inside the plate-cooldown window.
+ *
+ * Surfaced as HTTP 429 with ``error: "rate_limit_exceeded"`` and a
+ * ``limit`` of ``same_plate_per_user_24h`` or ``plate_reports_24h``.
+ */
+export class PlateCooldownError extends MultandoError {
+  public readonly statusCode: number = 429;
+  public readonly plate: string;
+  public readonly retryAfterHours: number;
+
+  constructor(message: string, plate: string, retryAfterHours: number) {
+    super(message, 'PLATE_COOLDOWN');
+    this.name = 'PlateCooldownError';
+    this.plate = plate;
+    this.retryAfterHours = retryAfterHours;
+  }
+}

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="multando_rate_limit_hour">Alcanzaste el limite de reportes por hora. Intenta mas tarde.</string>
+    <string name="multando_rate_limit_day">Alcanzaste el limite diario de reportes.</string>
+    <string name="multando_plate_cooldown">Esta placa fue reportada recientemente cerca. Si es un incidente diferente, por favor describelo.</string>
+    <string name="multando_rejection_rate_warning">Tu tasa de rechazo supera el 30%%. Revisa las guias de reporte responsable de Multando.</string>
+    <string name="multando_anonymity_notice">Tu identidad nunca se comparte con la parte reportada.</string>
+    <string name="multando_responsible_reporting_title">Como Multando protege el reporte responsable</string>
+    <string name="multando_responsible_reporting_bullet_1">Los reportes documentan comportamientos en espacios publicos, no personas.</string>
+    <string name="multando_responsible_reporting_bullet_2">La identidad de quien reporta nunca se comparte con la parte reportada.</string>
+    <string name="multando_responsible_reporting_bullet_3">Una sancion legal requiere validacion de la autoridad; la comunidad solo puede senalar, nunca acusar.</string>
+    <string name="multando_responsible_reporting_bullet_4">Los limites de tasa y el cooldown de placa previenen el acoso.</string>
+    <string name="multando_responsible_reporting_bullet_5">Los reportes falsos reducen tus puntos y reputacion.</string>
+    <string name="multando_info_button_content_description">Sobre el reporte responsable</string>
+    <string name="multando_learn_more">Saber mas</string>
+</resources>

@@ -45,9 +45,17 @@ public struct ReportFormView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            stepIndicator
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
+            HStack(alignment: .top) {
+                stepIndicator
+                Spacer()
+                // Always-available entry point to the responsible-reporting
+                // principles — keeps the safeguards one tap from the submit flow.
+                MultandoInfoButton(primaryColor: MultandoTheme.primary)
+                    .padding(.top, 2)
+                    .padding(.leading, 8)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
 
             Divider()
 

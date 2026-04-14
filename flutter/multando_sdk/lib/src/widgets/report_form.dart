@@ -4,6 +4,7 @@ import '../core/multando_client.dart';
 import '../models/enums.dart';
 import '../models/infraction.dart';
 import '../models/report.dart';
+import 'multando_info_button.dart';
 
 /// A Material Design widget that guides the user through a 3-step report
 /// creation flow:
@@ -92,7 +93,7 @@ class _ReportFormState extends State<ReportForm> {
 
     try {
       final report = ReportCreate(
-        infractionId: _selectedInfraction!.id,
+        infractionId: _selectedInfraction!.id.toString(),
         plateNumber: _plateController.text.trim(),
         location: LocationData(
           latitude: 0,
@@ -185,7 +186,15 @@ class _ReportFormState extends State<ReportForm> {
       controlsBuilder: _buildControls,
       steps: [
         Step(
-          title: Text(_t('step1_title')),
+          // Title includes the responsible-reporting info button so reporters
+          // always have one-tap access to the principles before selecting an
+          // infraction.
+          title: Row(
+            children: [
+              Expanded(child: Text(_t('step1_title'))),
+              MultandoInfoButton(locale: widget.locale),
+            ],
+          ),
           isActive: _currentStep >= 0,
           state: _currentStep > 0 ? StepState.complete : StepState.indexed,
           content: _buildStep1(),
@@ -314,13 +323,13 @@ class _ReportFormState extends State<ReportForm> {
               color: selected ? const Color(0xFF3B5EEF) : Colors.grey,
             ),
             title: Text(
-              infraction.name,
+              infraction.name(locale: widget.locale),
               style: TextStyle(
                 fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
             subtitle: Text(
-              infraction.description,
+              infraction.description(locale: widget.locale),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -437,7 +446,7 @@ class _ReportFormState extends State<ReportForm> {
       children: [
         _ReviewRow(
           label: _t('infraction'),
-          value: _selectedInfraction?.name ?? '',
+          value: _selectedInfraction?.name(locale: widget.locale) ?? '',
         ),
         _ReviewRow(
           label: _t('severity'),

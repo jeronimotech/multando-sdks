@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "MultandoSDK",
+    defaultLocalization: "en",
     platforms: [
         .iOS(.v16),
         .macOS(.v13)
@@ -17,7 +18,10 @@ let package = Package(
     targets: [
         .target(
             name: "MultandoSDK",
-            path: "Sources/MultandoSDK"
+            path: "Sources/MultandoSDK",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "MultandoSDKTests",

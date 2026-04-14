@@ -146,6 +146,10 @@ class _StatusBadge extends StatelessWidget {
         return ('Submitted', const Color(0xFF3B5EEF));
       case ReportStatus.underReview:
         return ('Under Review', const Color(0xFFF59E0B));
+      case ReportStatus.communityVerified:
+        return ('Community Verified', const Color(0xFF6366F1));
+      case ReportStatus.authorityReview:
+        return ('Authority Review', const Color(0xFF0EA5E9));
       case ReportStatus.verified:
         return ('Verified', const Color(0xFF10B981));
       case ReportStatus.rejected:

@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 enum class ReportStatus {
     @SerialName("pending") PENDING,
     @SerialName("under_review") UNDER_REVIEW,
+    @SerialName("community_verified") COMMUNITY_VERIFIED,
+    @SerialName("authority_review") AUTHORITY_REVIEW,
     @SerialName("verified") VERIFIED,
     @SerialName("rejected") REJECTED,
     @SerialName("appealed") APPEALED,

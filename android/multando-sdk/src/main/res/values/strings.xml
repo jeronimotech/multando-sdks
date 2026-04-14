@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="multando_rate_limit_hour">You\'ve reached the hourly report limit. Try again later.</string>
+    <string name="multando_rate_limit_day">You\'ve reached the daily report limit.</string>
+    <string name="multando_plate_cooldown">This plate was recently reported nearby. If it\'s a different incident, please describe it.</string>
+    <string name="multando_rejection_rate_warning">Your rejection rate is above 30%%. Review Multando\'s responsible reporting guidelines.</string>
+    <string name="multando_anonymity_notice">Your identity is never shared with the reported party.</string>
+    <string name="multando_responsible_reporting_title">How Multando protects responsible reporting</string>
+    <string name="multando_responsible_reporting_bullet_1">Reports document public behavior, not people.</string>
+    <string name="multando_responsible_reporting_bullet_2">Reporter identity is never shared with the reported party.</string>
+    <string name="multando_responsible_reporting_bullet_3">A legal citation requires authority validation — the community can only flag, never accuse.</string>
+    <string name="multando_responsible_reporting_bullet_4">Rate limits and plate cooldowns prevent harassment.</string>
+    <string name="multando_responsible_reporting_bullet_5">False reports reduce your points and reputation.</string>
+    <string name="multando_info_button_content_description">About responsible reporting</string>
+    <string name="multando_learn_more">Learn more</string>
+</resources>

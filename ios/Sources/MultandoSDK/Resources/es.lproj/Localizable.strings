@@ -1,0 +1,15 @@
+/* Multando SDK — Spanish strings */
+
+"rate_limit_hour" = "Alcanzaste el limite de reportes por hora. Intenta mas tarde.";
+"rate_limit_day" = "Alcanzaste el limite diario de reportes.";
+"plate_cooldown" = "Esta placa fue reportada recientemente cerca. Si es un incidente diferente, por favor describelo.";
+"rejection_rate_warning" = "Tu tasa de rechazo supera el 30%%. Revisa las guias de reporte responsable de Multando.";
+"anonymity_notice" = "Tu identidad nunca se comparte con la parte reportada.";
+"responsible_reporting_title" = "Como Multando protege el reporte responsable";
+"responsible_reporting_bullet_1" = "Los reportes documentan comportamientos en espacios publicos, no personas.";
+"responsible_reporting_bullet_2" = "La identidad de quien reporta nunca se comparte con la parte reportada.";
+"responsible_reporting_bullet_3" = "Una sancion legal requiere validacion de la autoridad — la comunidad solo puede senalar, nunca acusar.";
+"responsible_reporting_bullet_4" = "Los limites de tasa y el cooldown de placa previenen el acoso.";
+"responsible_reporting_bullet_5" = "Los reportes falsos reducen tus puntos y reputacion.";
+"info_button_tooltip" = "Sobre el reporte responsable";
+"learn_more" = "Saber mas";

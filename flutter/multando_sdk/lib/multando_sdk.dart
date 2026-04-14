@@ -22,6 +22,12 @@ export 'src/models/verification.dart';
 export 'src/capture/evidence_signer.dart';
 export 'src/capture/anti_fraud.dart';
 
+// Widgets
+export 'src/widgets/multando_info_button.dart';
+export 'src/widgets/multando_provider.dart';
+export 'src/widgets/report_card.dart';
+export 'src/widgets/report_form.dart';
+
 // Services
 export 'src/services/auth_service.dart';
 export 'src/services/blockchain_service.dart';

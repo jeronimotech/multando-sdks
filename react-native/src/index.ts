@@ -73,7 +73,17 @@ export {
   MultandoNetworkError,
   MultandoValidationError,
   MultandoAuthError,
+  RateLimitError,
+  PlateCooldownError,
 } from './models/error';
+
+// i18n - responsible reporting strings
+export {
+  t as tResponsibleReporting,
+  responsibleReportingBullets,
+  STRINGS as RESPONSIBLE_REPORTING_STRINGS,
+} from './i18n/strings';
+export type { SupportedLocale, StringKey } from './i18n/strings';
 
 // Services
 export { AuthService } from './services/authService';
@@ -123,3 +133,5 @@ export { ReportForm } from './components/ReportForm';
 export type { ReportFormProps } from './components/ReportForm';
 export { MultandoChat } from './components/MultandoChat';
 export type { MultandoChatProps } from './components/MultandoChat';
+export { MultandoInfoButton } from './components/MultandoInfoButton';
+export type { MultandoInfoButtonProps } from './components/MultandoInfoButton';

@@ -33,6 +33,14 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    buildFeatures {
+        compose = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.7"
+    }
 }
 
 dependencies {
@@ -54,6 +62,13 @@ dependencies {
 
     // AndroidX core
     implementation("androidx.core:core-ktx:1.12.0")
+
+    // Compose (UI helpers bundled with the SDK)
+    implementation(platform("androidx.compose:compose-bom:2024.01.00"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.compose.ui:ui-tooling-preview")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

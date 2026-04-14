@@ -46,9 +46,13 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.multando.sdk.R
 import com.multando.sdk.models.InfractionResponse
 import com.multando.sdk.models.InfractionSeverity
 import com.multando.sdk.models.LocationData
+import com.multando.sdk.models.MultandoError
+import com.multando.sdk.models.RateLimitScope
 import com.multando.sdk.models.ReportCreate
 import com.multando.sdk.models.ReportDetail
 import com.multando.sdk.models.ReportSource
@@ -76,6 +80,10 @@ fun ReportFormScreen(
     onReportCreated: (ReportDetail) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+
+    val rateLimitHourMessage = stringResource(R.string.multando_rate_limit_hour)
+    val rateLimitDayMessage = stringResource(R.string.multando_rate_limit_day)
+    val plateCooldownMessage = stringResource(R.string.multando_plate_cooldown)
 
     var currentStep by remember { mutableIntStateOf(0) }
 
@@ -181,20 +189,27 @@ fun ReportFormScreen(
             }
 
             if (currentStep < 2) {
-                Button(
-                    onClick = { currentStep++ },
-                    enabled = when (currentStep) {
-                        0 -> selectedInfraction != null
-                        1 -> plateNumber.text.isNotBlank() && locationText.text.isNotBlank()
-                        else -> true
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MultandoColors.Primary,
-                    ),
-                ) {
-                    Text("Next")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    MultandoInfoButton(primaryColor = MultandoColors.Primary)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Button(
+                        onClick = { currentStep++ },
+                        enabled = when (currentStep) {
+                            0 -> selectedInfraction != null
+                            1 -> plateNumber.text.isNotBlank() && locationText.text.isNotBlank()
+                            else -> true
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MultandoColors.Primary,
+                        ),
+                    ) {
+                        Text("Next")
+                    }
                 }
             } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    MultandoInfoButton(primaryColor = MultandoColors.Primary)
+                    Spacer(modifier = Modifier.width(4.dp))
                 Button(
                     onClick = {
                         scope.launch {
@@ -216,6 +231,15 @@ fun ReportFormScreen(
                                 )
                                 val detail = reportService.create(report)
                                 onReportCreated(detail)
+                            } catch (e: MultandoError.RateLimitException) {
+                                submitError = when (e.scope) {
+                                    RateLimitScope.HOUR -> rateLimitHourMessage
+                                    RateLimitScope.DAY -> rateLimitDayMessage
+                                }
+                                isSubmitting = false
+                            } catch (e: MultandoError.PlateCooldownException) {
+                                submitError = plateCooldownMessage
+                                isSubmitting = false
                             } catch (e: Exception) {
                                 submitError = e.message ?: "Submission failed"
                                 isSubmitting = false
@@ -236,6 +260,7 @@ fun ReportFormScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                     }
                     Text(if (isSubmitting) "Submitting..." else "Submit Report")
+                }
                 }
             }
         }

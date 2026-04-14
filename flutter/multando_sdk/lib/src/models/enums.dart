@@ -2,6 +2,8 @@ enum ReportStatus {
   draft('draft'),
   submitted('submitted'),
   underReview('under_review'),
+  communityVerified('community_verified'),
+  authorityReview('authority_review'),
   verified('verified'),
   rejected('rejected'),
   appealed('appealed'),

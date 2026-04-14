@@ -103,6 +103,10 @@ public struct ReportDetail: Codable, Sendable {
     public let evidence: [EvidenceResponse]?
     public let createdAt: String
     public let updatedAt: String
+    /// Optional public display name for the reporter. The backend only
+    /// exposes this on feeds where the reporter opted in — the reported
+    /// party never sees it (see responsible-reporting principles).
+    public let reporterDisplayName: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -118,6 +122,7 @@ public struct ReportDetail: Codable, Sendable {
         case evidence
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+        case reporterDisplayName = "reporter_display_name"
     }
 }
 

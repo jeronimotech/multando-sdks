@@ -5,6 +5,10 @@ export enum ReportStatus {
   Verified = 'verified',
   Rejected = 'rejected',
   Resolved = 'resolved',
+  /** Report reached the community-verification threshold. */
+  CommunityVerified = 'community_verified',
+  /** Report is awaiting authority review before becoming a citation. */
+  AuthorityReview = 'authority_review',
 }
 
 export enum EvidenceType {

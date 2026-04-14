@@ -12,6 +12,8 @@ import {
   MultandoNetworkError,
   MultandoValidationError,
   MultandoAuthError,
+  RateLimitError,
+  PlateCooldownError,
 } from '../models/error';
 import { Logger } from './logger';
 
@@ -180,6 +182,51 @@ function mapAxiosError(error: AxiosError): MultandoError {
     );
   }
 
+  if (status === 429) {
+    // Backend shape (see rate_limiter.py): response body is wrapped as
+    // { detail: { error, limit, max, window_seconds, retry_after_seconds, message } }
+    // After the camelCase response interceptor runs, detail keys become
+    // camelCase (retryAfterSeconds, windowSeconds, ...).
+    const detail = (responseData?.detail ?? responseData) as
+      | Record<string, unknown>
+      | undefined;
+    const errorCode =
+      (detail?.error as string | undefined) ??
+      (detail?.errorCode as string | undefined) ??
+      'rate_limit_exceeded';
+    const limitName = (detail?.limit as string | undefined) ?? '';
+    const message =
+      (detail?.message as string | undefined) ||
+      'Rate limit exceeded. Please try again later.';
+    const headers = error.response.headers as
+      | Record<string, string | undefined>
+      | undefined;
+    const headerRetryAfter = headers?.['retry-after'];
+    const retryAfter =
+      (detail?.retryAfterSeconds as number | undefined) ??
+      (detail?.retryAfter as number | undefined) ??
+      (headerRetryAfter ? Number(headerRetryAfter) : 0);
+
+    const isPlateCooldown =
+      errorCode === 'plate_cooldown' ||
+      limitName === 'same_plate_per_user_24h' ||
+      limitName === 'plate_reports_24h';
+
+    if (isPlateCooldown) {
+      const plate =
+        (detail?.plate as string | undefined) ||
+        // Attempt to pull the plate out of the message when the
+        // backend embedded it ("...plate ABC123...").
+        (typeof message === 'string'
+          ? (message.match(/plate\s+([A-Z0-9-]+)/i)?.[1] ?? '')
+          : '');
+      const retryAfterHours = retryAfter > 0 ? Math.ceil(retryAfter / 3600) : 0;
+      return new PlateCooldownError(message, plate, retryAfterHours);
+    }
+
+    return new RateLimitError(message, retryAfter ?? 0, limitName);
+  }
+
   if (status === 422) {
     const detail = responseData?.detail;
     const fields: Record<string, string[]> = {};
@@ -207,6 +254,8 @@ type MultandoError =
   | MultandoApiError
   | MultandoNetworkError
   | MultandoValidationError
-  | MultandoAuthError;
+  | MultandoAuthError
+  | RateLimitError
+  | PlateCooldownError;
 
 export type { AxiosInstance, AxiosRequestConfig };

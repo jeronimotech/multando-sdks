@@ -93,12 +93,88 @@ public final class HTTPClient: @unchecked Sendable {
             return try await raw(method: method, path: path, body: body, queryItems: queryItems, authenticated: authenticated, isRetry: true)
         }
 
+        // 429 → try to decode the backend's structured rate-limit body.
+        if httpResponse.statusCode == 429 {
+            if let typed = Self.decodeRateLimitError(data: data, response: httpResponse, body: body) {
+                throw typed
+            }
+        }
+
         guard (200..<300).contains(httpResponse.statusCode) else {
             let message = String(data: data, encoding: .utf8) ?? "Unknown error"
             throw MultandoError.apiError(statusCode: httpResponse.statusCode, message: message)
         }
 
         return data
+    }
+
+    // MARK: - Rate-limit decoding
+
+    /// FastAPI wraps HTTPException(detail=...) as `{"detail": {...}}`.
+    private struct RateLimitEnvelope: Decodable {
+        let detail: RateLimitDetail
+    }
+
+    private struct RateLimitDetail: Decodable {
+        let error: String?
+        let limit: String?
+        let retryAfterSeconds: Int?
+        let windowSeconds: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case error
+            case limit
+            case retryAfterSeconds = "retry_after_seconds"
+            case windowSeconds = "window_seconds"
+        }
+    }
+
+    /// Maps a 429 response body + headers onto our typed error cases.
+    /// Returns `nil` when the payload doesn't match the known schema so the
+    /// caller falls back to a generic ``MultandoError.apiError``.
+    private static func decodeRateLimitError(
+        data: Data,
+        response: HTTPURLResponse,
+        body: (any Encodable)?
+    ) -> MultandoError? {
+        let dec = JSONDecoder()
+        let detail: RateLimitDetail?
+        if let envelope = try? dec.decode(RateLimitEnvelope.self, from: data) {
+            detail = envelope.detail
+        } else if let flat = try? dec.decode(RateLimitDetail.self, from: data) {
+            detail = flat
+        } else {
+            detail = nil
+        }
+
+        // Retry-After header takes precedence; fall back to the body.
+        let headerRetry = response.value(forHTTPHeaderField: "Retry-After").flatMap(Int.init)
+        let retryAfter = TimeInterval(headerRetry ?? detail?.retryAfterSeconds ?? 0)
+
+        switch detail?.limit {
+        case "reports_per_hour":
+            return .rateLimitExceeded(retryAfter: retryAfter, scope: .hour)
+        case "reports_per_day":
+            return .rateLimitExceeded(retryAfter: retryAfter, scope: .day)
+        case "same_plate_per_user_24h", "plate_reports_24h":
+            let plate = Self.extractPlate(from: body) ?? ""
+            let hours = max(1, Int((detail?.windowSeconds ?? 0) / 3600))
+            return .plateCooldown(plate: plate, retryAfterHours: hours)
+        default:
+            return nil
+        }
+    }
+
+    /// Best-effort extraction of `license_plate` from an outgoing report body.
+    private static func extractPlate(from body: (any Encodable)?) -> String? {
+        guard let body else { return nil }
+        let enc = JSONEncoder()
+        enc.keyEncodingStrategy = .convertToSnakeCase
+        guard
+            let data = try? enc.encode(AnyEncodable(body)),
+            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return nil }
+        return json["license_plate"] as? String
     }
 
     private func buildRequest(

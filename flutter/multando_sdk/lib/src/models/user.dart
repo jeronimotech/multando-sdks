@@ -28,6 +28,10 @@ class UserProfile {
     required this.isVerified,
     this.reputationScore,
     required this.createdAt,
+    this.totalReportsCount = 0,
+    this.rejectedReportsCount,
+    this.rejectionRate,
+    this.rejectionRateWarning = false,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -43,6 +47,13 @@ class UserProfile {
       isVerified: json['is_verified'] as bool? ?? false,
       reputationScore: _toDouble(json['reputation_score']),
       createdAt: DateTime.parse(json['created_at'] as String),
+      totalReportsCount: _toInt(json['total_reports_count']),
+      rejectedReportsCount: json['rejected_reports_count'] == null
+          ? null
+          : _toInt(json['rejected_reports_count']),
+      rejectionRate: _toDouble(json['rejection_rate']),
+      rejectionRateWarning:
+          json['rejection_rate_warning'] as bool? ?? false,
     );
   }
 
@@ -58,6 +69,21 @@ class UserProfile {
   final double? reputationScore;
   final DateTime createdAt;
 
+  /// Total number of reports submitted by this user (lifetime).
+  final int totalReportsCount;
+
+  /// Number of those reports that were rejected. `null` if the backend
+  /// did not include it (e.g. privacy-stripped public endpoint).
+  final int? rejectedReportsCount;
+
+  /// Fraction in `[0.0, 1.0]` — rejected / total. `null` when unknown.
+  final double? rejectionRate;
+
+  /// Server-computed flag: `true` when [rejectionRate] exceeds the
+  /// responsible-reporting threshold (currently 30%). UIs should nudge
+  /// the reporter toward the principles page when this is set.
+  final bool rejectionRateWarning;
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'email': email,
@@ -70,6 +96,11 @@ class UserProfile {
         'is_verified': isVerified,
         if (reputationScore != null) 'reputation_score': reputationScore,
         'created_at': createdAt.toIso8601String(),
+        'total_reports_count': totalReportsCount,
+        if (rejectedReportsCount != null)
+          'rejected_reports_count': rejectedReportsCount,
+        if (rejectionRate != null) 'rejection_rate': rejectionRate,
+        'rejection_rate_warning': rejectionRateWarning,
       };
 }
 

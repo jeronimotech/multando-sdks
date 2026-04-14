@@ -24,5 +24,14 @@
   "blockchainStakeSuccess": "Tokens apostados exitosamente.",
   "blockchainUnstakeSuccess": "Tokens desapostados exitosamente.",
   "blockchainClaimSuccess": "Recompensas reclamadas exitosamente.",
-  "walletLinked": "Billetera vinculada a tu cuenta."
+  "walletLinked": "Billetera vinculada a tu cuenta.",
+  "rate_limit_hour": "Has alcanzado el limite de reportes por hora. Intenta mas tarde.",
+  "rate_limit_day": "Has alcanzado el limite diario de reportes.",
+  "plate_cooldown": "Esta placa fue reportada recientemente cerca. Si es un incidente distinto, describelo.",
+  "rejection_rate_warning": "Tu tasa de rechazos supera el 30%. Revisa los principios de reporte responsable de Multando.",
+  "anonymity_notice": "Tu identidad nunca se comparte con la parte reportada.",
+  "responsible_reporting_title": "Como Multando protege el reporte responsable",
+  "responsible_reporting_body": "- Los reportes documentan comportamientos en espacios publicos, no a personas.\n- La identidad del reportante se mantiene anonima y nunca se comparte con la parte reportada.\n- Un comparendo legal solo puede ser emitido tras la validacion de la autoridad competente.\n- Los limites de frecuencia y cooldowns de placa previenen el acoso dirigido y los ataques coordinados.\n- Los reportes falsos o de mala fe penalizan la reputacion y recompensas del reportante, no a la parte reportada.",
+  "info_button_tooltip": "Sobre el reporte responsable",
+  "learn_more": "Saber mas"
 }

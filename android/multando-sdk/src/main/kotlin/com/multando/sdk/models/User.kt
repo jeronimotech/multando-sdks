@@ -12,6 +12,10 @@ data class UserProfile(
     @SerialName("reputation_score") val reputationScore: Double,
     @SerialName("total_reports") val totalReports: Int,
     @SerialName("verified_reports") val verifiedReports: Int,
+    @SerialName("total_reports_count") val totalReportsCount: Int = 0,
+    @SerialName("rejected_reports_count") val rejectedReportsCount: Int? = null,
+    @SerialName("rejection_rate") val rejectionRate: Double? = null,
+    @SerialName("rejection_rate_warning") val rejectionRateWarning: Boolean = false,
     @SerialName("created_at") val createdAt: String,
     @SerialName("updated_at") val updatedAt: String
 )

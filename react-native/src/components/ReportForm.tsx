@@ -18,6 +18,8 @@ import { useVehicleTypes } from '../hooks/useVehicleTypes';
 import { ReportCreate, LocationData, ReportDetail } from '../models/report';
 import { InfractionResponse } from '../models/infraction';
 import { VehicleTypeResponse } from '../models/vehicleType';
+import { MultandoInfoButton } from './MultandoInfoButton';
+import { SupportedLocale } from '../i18n/strings';
 
 type ReportFormStep = 'capture' | 'confirm' | 'submit';
 
@@ -27,6 +29,11 @@ export interface ReportFormProps {
   onCancel?: () => void;
   onError?: (error: Error) => void;
   style?: ViewStyle;
+  /**
+   * Locale used by the embedded responsible-reporting info button.
+   * Defaults to 'en'.
+   */
+  infoLocale?: SupportedLocale;
 }
 
 interface FormData {
@@ -49,6 +56,7 @@ export function ReportForm({
   onCancel,
   onError,
   style,
+  infoLocale = 'en',
 }: ReportFormProps): React.ReactElement {
   const { t } = useMultando();
   const { create, isLoading: isSubmitting } = useReports();
@@ -165,6 +173,12 @@ export function ReportForm({
 
   return (
     <View style={[styles.container, style]}>
+      {/* Responsible-reporting info button — placed in the header so
+          reporters can access Multando's principles at any step. */}
+      <View style={styles.headerRow}>
+        <MultandoInfoButton locale={infoLocale} />
+      </View>
+
       {/* Step indicators */}
       <View style={styles.stepIndicator}>
         <StepDot
@@ -495,6 +509,7 @@ interface Styles {
   container: ViewStyle;
   centered: ViewStyle;
   loadingText: TextStyle;
+  headerRow: ViewStyle;
   stepIndicator: ViewStyle;
   stepDotContainer: ViewStyle;
   stepDot: ViewStyle;
@@ -541,6 +556,12 @@ const styles = StyleSheet.create<Styles>({
     marginTop: 12,
     fontSize: 16,
     color: '#666666',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   stepIndicator: {
     flexDirection: 'row',

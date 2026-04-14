@@ -135,6 +135,7 @@ class ReportDetail {
     this.evidence = const [],
     this.verificationCount,
     this.rejectionCount,
+    this.reporterDisplayName,
   });
 
   factory ReportDetail.fromJson(Map<String, dynamic> json) {
@@ -171,6 +172,7 @@ class ReportDetail {
           : const [],
       verificationCount: json['verification_count'] as int?,
       rejectionCount: json['rejection_count'] as int?,
+      reporterDisplayName: json['reporter_display_name'] as String?,
     );
   }
 
@@ -190,6 +192,11 @@ class ReportDetail {
   final int? verificationCount;
   final int? rejectionCount;
 
+  /// Anonymized display label shown in lieu of a reporter reference when
+  /// the API omits / nulls [reporterId] (e.g. "Community reporter").
+  /// Reporter identity is never exposed to the reported party.
+  final String? reporterDisplayName;
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'infraction_id': infractionId,
@@ -206,6 +213,8 @@ class ReportDetail {
         'evidence': evidence.map((e) => e.toJson()).toList(),
         if (verificationCount != null) 'verification_count': verificationCount,
         if (rejectionCount != null) 'rejection_count': rejectionCount,
+        if (reporterDisplayName != null)
+          'reporter_display_name': reporterDisplayName,
       };
 }
 

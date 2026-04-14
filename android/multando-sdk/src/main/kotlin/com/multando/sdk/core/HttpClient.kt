@@ -1,8 +1,14 @@
 package com.multando.sdk.core
 
 import com.multando.sdk.models.MultandoError
+import com.multando.sdk.models.RateLimitScope
 import com.multando.sdk.models.RefreshRequest
 import com.multando.sdk.models.TokenResponse
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -173,6 +179,9 @@ class HttpClient internal constructor(
         val responseBodyString = response.body?.string() ?: ""
 
         if (!response.isSuccessful) {
+            if (response.code == 429) {
+                mapRateLimitError(responseBodyString, response.header("Retry-After"))?.let { throw it }
+            }
             throw MultandoError.ApiError(
                 statusCode = response.code,
                 message = responseBodyString.ifEmpty { response.message }
@@ -180,6 +189,74 @@ class HttpClient internal constructor(
         }
 
         responseBodyString
+    }
+
+    /**
+     * Parse a structured 429 body into a typed [MultandoError.RateLimitException] or
+     * [MultandoError.PlateCooldownException]. Returns null if the body isn't
+     * recognized — the caller will fall back to a generic [MultandoError.ApiError].
+     *
+     * Expected body shape:
+     * ```
+     * { "detail": {
+     *     "error": "rate_limit_exceeded",
+     *     "limit": "reports_per_hour" | "reports_per_day" | "same_plate_per_user_24h" | "plate_reports_24h",
+     *     "retry_after_seconds": 3600,
+     *     "message": "..."
+     *   }
+     * }
+     * ```
+     * The SDK also accepts legacy bodies where the payload is flat (no
+     * ``detail`` wrapper) or uses ``error_code`` instead of ``error``.
+     */
+    private fun mapRateLimitError(body: String, retryAfterHeader: String?): MultandoError? {
+        if (body.isBlank()) return null
+        val root = try {
+            json.parseToJsonElement(body).jsonObject
+        } catch (_: Exception) {
+            return null
+        }
+
+        // FastAPI wraps HTTPException payloads under "detail".
+        val payload: JsonObject = (root["detail"] as? JsonObject) ?: root
+
+        val code = payload["error"]?.jsonPrimitive?.contentOrNull
+            ?: payload["error_code"]?.jsonPrimitive?.contentOrNull
+        val limit = payload["limit"]?.jsonPrimitive?.contentOrNull
+        val message = payload["message"]?.jsonPrimitive?.contentOrNull
+            ?: body
+
+        val retryAfterSeconds: Long = payload["retry_after_seconds"]?.jsonPrimitive?.longOrNull
+            ?: retryAfterHeader?.toLongOrNull()
+            ?: 0L
+
+        val isPlateCooldown = code == "plate_cooldown" ||
+            limit == "same_plate_per_user_24h" ||
+            limit == "plate_reports_24h"
+
+        if (isPlateCooldown) {
+            val plate = payload["plate"]?.jsonPrimitive?.contentOrNull ?: ""
+            val retryAfterHours = ((retryAfterSeconds + 3599) / 3600).toInt().coerceAtLeast(1)
+            return MultandoError.PlateCooldownException(
+                message = message,
+                plate = plate,
+                retryAfterHours = retryAfterHours,
+            )
+        }
+
+        if (code == "rate_limit_exceeded") {
+            val scope = when (limit) {
+                "reports_per_day" -> RateLimitScope.DAY
+                else -> RateLimitScope.HOUR
+            }
+            return MultandoError.RateLimitException(
+                message = message,
+                retryAfterSeconds = retryAfterSeconds,
+                scope = scope,
+            )
+        }
+
+        return null
     }
 
     private suspend fun refreshTokens(refreshToken: String): TokenResponse {

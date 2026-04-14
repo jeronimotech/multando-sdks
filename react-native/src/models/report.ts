@@ -57,6 +57,13 @@ export interface ReportDetail {
   createdAt: string;
   updatedAt: string;
   reporter: UserPublic;
+  /**
+   * Anonymized display label for the reporter (e.g. "Reporter #4821").
+   * Backend emits this in place of a real name when the viewer is not
+   * the reporter themselves — keeping reporter identity private from
+   * the reported party and the general public.
+   */
+  reporterDisplayName?: string;
   evidence: EvidenceResponse[];
   verificationCount: number;
   rejectionCount: number;

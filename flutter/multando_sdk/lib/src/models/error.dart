@@ -22,14 +22,79 @@ abstract class MultandoError implements Exception {
     final statusCode = response?.statusCode;
     final data = response?.data;
 
+    // The backend returns structured 429 bodies for both user-level
+    // report rate limits and plate-level cooldowns. The envelope is
+    // either {"detail": {...}} (FastAPI HTTPException) or a flat map.
+    // Both shapes expose `error`/`error_code`, `limit`, `retry_after_seconds`.
+    Map<String, dynamic>? structured;
+    if (data is Map<String, dynamic>) {
+      final detail = data['detail'];
+      if (detail is Map<String, dynamic>) {
+        structured = detail;
+      } else {
+        structured = data;
+      }
+    }
+
     String message;
     if (data is Map<String, dynamic>) {
-      message = (data['detail'] as String?) ??
-          (data['message'] as String?) ??
-          error.message ??
-          'Unknown API error';
+      final detail = data['detail'];
+      if (detail is String) {
+        message = detail;
+      } else if (structured != null && structured['message'] is String) {
+        message = structured['message'] as String;
+      } else {
+        message = (data['message'] as String?) ??
+            error.message ??
+            'Unknown API error';
+      }
     } else {
       message = error.message ?? 'Unknown error';
+    }
+
+    // 429 rate-limit / plate-cooldown handling.
+    if (statusCode == 429 && structured != null) {
+      final errorCode =
+          (structured['error_code'] as String?) ?? (structured['error'] as String?);
+      final limitName = structured['limit'] as String?;
+      final retryAfter = _toInt(structured['retry_after_seconds']);
+
+      // Plate cooldown: either an explicit error_code, or the legacy
+      // rate_limit_exceeded with a plate-scoped `limit` name.
+      final isPlateCooldown = errorCode == 'plate_cooldown' ||
+          (limitName != null &&
+              (limitName.startsWith('same_plate') ||
+                  limitName.startsWith('plate_reports') ||
+                  limitName.contains('plate')));
+
+      if (isPlateCooldown) {
+        final plate = structured['plate'] as String?;
+        final retryAfterHours = structured['retry_after_hours'] != null
+            ? _toInt(structured['retry_after_hours'])
+            : (retryAfter != null ? (retryAfter / 3600).ceil() : null);
+        return PlateCooldownException(
+          message: message,
+          plate: plate,
+          retryAfterHours: retryAfterHours,
+          statusCode: statusCode,
+          originalError: error,
+        );
+      }
+
+      if (errorCode == 'rate_limit_exceeded' || limitName != null) {
+        // Scope is "day" if the window is >= 24h or the limit name mentions day,
+        // otherwise "hour".
+        final windowSeconds = _toInt(structured['window_seconds']);
+        final isDay = (limitName != null && limitName.contains('day')) ||
+            (windowSeconds != null && windowSeconds >= 86400);
+        return RateLimitException(
+          message: message,
+          retryAfterSeconds: retryAfter,
+          scope: isDay ? RateLimitScope.day : RateLimitScope.hour,
+          statusCode: statusCode,
+          originalError: error,
+        );
+      }
     }
 
     // Network / connectivity errors
@@ -156,4 +221,72 @@ class MultandoAuthError extends MultandoError {
 
   @override
   String toString() => 'MultandoAuthError($statusCode): $message';
+}
+
+/// Scope of a [RateLimitException].
+enum RateLimitScope { hour, day }
+
+/// Thrown when the backend returns a structured 429 for a user-level
+/// report rate limit (hourly or daily).
+///
+/// The SDK maps `error_code: "rate_limit_exceeded"` responses from the
+/// Multando API into this exception so callers can surface a specific,
+/// localized message to the user.
+class RateLimitException extends MultandoError {
+  RateLimitException({
+    required super.message,
+    required this.scope,
+    this.retryAfterSeconds,
+    super.statusCode,
+    super.originalError,
+  });
+
+  /// Whether the reporter hit the hourly or the daily report cap.
+  final RateLimitScope scope;
+
+  /// Server-provided backoff in seconds. May be `null` if the API
+  /// did not include `retry_after_seconds`.
+  final int? retryAfterSeconds;
+
+  @override
+  String toString() =>
+      'RateLimitException($statusCode, scope=${scope.name}, '
+      'retryAfter=${retryAfterSeconds}s): $message';
+}
+
+/// Thrown when a plate-level cooldown blocks a new report for the
+/// same plate / area.
+///
+/// This is part of Multando's responsible-reporting safeguards:
+/// a single plate cannot be reported repeatedly by the same user, and
+/// a plate cannot accumulate coordinated pile-on reports within a
+/// short window without evidence of movement.
+class PlateCooldownException extends MultandoError {
+  PlateCooldownException({
+    required super.message,
+    this.plate,
+    this.retryAfterHours,
+    super.statusCode,
+    super.originalError,
+  });
+
+  /// The plate that triggered the cooldown, if the API echoed it back.
+  final String? plate;
+
+  /// Server-provided backoff in hours. May be `null` if the API
+  /// did not include `retry_after_hours` / `retry_after_seconds`.
+  final int? retryAfterHours;
+
+  @override
+  String toString() => 'PlateCooldownException($statusCode, plate=$plate, '
+      'retryAfter=${retryAfterHours}h): $message';
+}
+
+/// Parse a value that may be num or String to int (returns null on failure).
+int? _toInt(dynamic v) {
+  if (v == null) return null;
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v);
+  return null;
 }
