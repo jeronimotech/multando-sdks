@@ -28,7 +28,13 @@ export interface SendMessageRequest {
   captureMethod?: string;
 }
 
+export interface QuickReply {
+  label: string;
+  value: string;
+}
+
 export interface ChatResponse {
   message: ChatMessage;
   toolCalls: Record<string, unknown>[];
+  quickReplies: QuickReply[];
 }

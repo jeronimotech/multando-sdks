@@ -90,14 +90,46 @@ public struct SendMessageRequest: Codable, Sendable {
     }
 }
 
+/// A quick-reply suggestion that the UI can render as a tappable chip/button.
+public struct QuickReply: Codable, Sendable, Hashable {
+    /// Display text for the button.
+    public let label: String
+    /// Text to send when the button is tapped.
+    public let value: String
+
+    public init(label: String, value: String) {
+        self.label = label
+        self.value = value
+    }
+}
+
 /// Response from the AI after sending a message.
 public struct ChatResponse: Codable, Sendable {
     public let message: ChatMessage
     public let toolCalls: [[String: AnyCodable]]
+    public let quickReplies: [QuickReply]
 
     enum CodingKeys: String, CodingKey {
         case message
         case toolCalls = "tool_calls"
+        case quickReplies = "quick_replies"
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        message = try container.decode(ChatMessage.self, forKey: .message)
+        toolCalls = try container.decodeIfPresent([[String: AnyCodable]].self, forKey: .toolCalls) ?? []
+        quickReplies = try container.decodeIfPresent([QuickReply].self, forKey: .quickReplies) ?? []
+    }
+
+    public init(
+        message: ChatMessage,
+        toolCalls: [[String: AnyCodable]] = [],
+        quickReplies: [QuickReply] = []
+    ) {
+        self.message = message
+        self.toolCalls = toolCalls
+        self.quickReplies = quickReplies
     }
 }
 

@@ -109,6 +109,7 @@ export type {
   ChatMessage,
   SendMessageRequest,
   ChatResponse,
+  QuickReply,
 } from './models/conversation';
 
 // Services - Chat

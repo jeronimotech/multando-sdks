@@ -21,6 +21,7 @@ public struct MultandoChatView: View {
     @State private var isSending = false
     @State private var error: String?
     @State private var toolCalls: [[String: AnyCodable]] = []
+    @State private var quickReplies: [QuickReply] = []
 
     private static let brandRed = Color(red: 0.902, green: 0.224, blue: 0.275)
     private static let brandRedLight = Color(red: 0.992, green: 0.929, blue: 0.937)
@@ -159,9 +160,39 @@ public struct MultandoChatView: View {
                 toolCallCards
             }
 
+            // Quick replies
+            if !quickReplies.isEmpty && !isSending {
+                quickRepliesBar
+            }
+
             Divider()
 
             inputBar
+        }
+    }
+
+    private var quickRepliesBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Array(quickReplies.enumerated()), id: \.offset) { _, reply in
+                    Button(action: { handleQuickReply(reply) }) {
+                        Text(reply.label)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(Self.brandRed)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Self.brandRedLight)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 18)
+                                    .stroke(Self.brandRed, lineWidth: 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                    }
+                    .disabled(isSending)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 8)
         }
     }
 
@@ -286,13 +317,22 @@ public struct MultandoChatView: View {
     }
 
     private func handleSend() async {
-        let text = inputText.trimmingCharacters(in: .whitespaces)
+        await sendText(inputText)
+    }
+
+    private func handleQuickReply(_ reply: QuickReply) {
+        Task { await sendText(reply.value) }
+    }
+
+    private func sendText(_ rawText: String) async {
+        let text = rawText.trimmingCharacters(in: .whitespaces)
         guard !text.isEmpty, let conv = conversation, !isSending else { return }
 
         let currentText = text
         inputText = ""
         isSending = true
         toolCalls = []
+        quickReplies = []
 
         // Optimistic user message
         let optimistic = ChatMessage(
@@ -317,6 +357,9 @@ public struct MultandoChatView: View {
                 messages.append(response.message)
                 if !response.toolCalls.isEmpty {
                     toolCalls = response.toolCalls
+                }
+                if !response.quickReplies.isEmpty {
+                    quickReplies = response.quickReplies
                 }
                 isSending = false
             }

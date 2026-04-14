@@ -1,6 +1,9 @@
 package com.multando.sdk.chat
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -86,6 +90,7 @@ fun MultandoChatScreen(
     var isSending by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var toolCalls by remember { mutableStateOf<List<JsonObject>>(emptyList()) }
+    var quickReplies by remember { mutableStateOf<List<QuickReply>>(emptyList()) }
 
     // Initialize conversation on first composition
     LaunchedEffect(Unit) {
@@ -170,6 +175,59 @@ fun MultandoChatScreen(
                     ToolCallCards(toolCalls = toolCalls)
                 }
 
+                // Shared send logic used by the input bar and quick replies
+                val sendText: (String) -> Unit = sendText@{ rawText ->
+                    val text = rawText.trim()
+                    if (text.isEmpty() || conversation == null || isSending) {
+                        return@sendText
+                    }
+                    inputText = ""
+                    isSending = true
+                    toolCalls = emptyList()
+                    quickReplies = emptyList()
+
+                    // Optimistic user message
+                    val optimistic = ChatMessage(
+                        id = (System.currentTimeMillis() % Int.MAX_VALUE).toInt(),
+                        conversationId = conversation!!.id,
+                        direction = "outbound",
+                        content = text,
+                        messageType = "text",
+                        createdAt = currentIsoTime(),
+                    )
+                    messages.add(optimistic)
+
+                    scope.launch {
+                        try {
+                            val request = SendMessageRequest(content = text)
+                            val response = chatService.sendMessage(
+                                conversationId = conversation!!.id,
+                                request = request,
+                            )
+                            messages.add(response.message)
+                            if (response.toolCalls.isNotEmpty()) {
+                                toolCalls = response.toolCalls
+                            }
+                            if (response.quickReplies.isNotEmpty()) {
+                                quickReplies = response.quickReplies
+                            }
+                        } catch (e: Exception) {
+                            messages.remove(optimistic)
+                            inputText = text
+                        }
+                        isSending = false
+                    }
+                }
+
+                // Quick replies chips
+                if (quickReplies.isNotEmpty() && !isSending) {
+                    QuickReplyChips(
+                        quickReplies = quickReplies,
+                        enabled = !isSending,
+                        onSelect = { reply -> sendText(reply.value) },
+                    )
+                }
+
                 Divider()
 
                 // Input bar
@@ -177,43 +235,7 @@ fun MultandoChatScreen(
                     text = inputText,
                     onTextChange = { inputText = it },
                     isSending = isSending,
-                    onSend = {
-                        val text = inputText.trim()
-                        if (text.isNotEmpty() && conversation != null && !isSending) {
-                            inputText = ""
-                            isSending = true
-                            toolCalls = emptyList()
-
-                            // Optimistic user message
-                            val optimistic = ChatMessage(
-                                id = (System.currentTimeMillis() % Int.MAX_VALUE).toInt(),
-                                conversationId = conversation!!.id,
-                                direction = "outbound",
-                                content = text,
-                                messageType = "text",
-                                createdAt = currentIsoTime(),
-                            )
-                            messages.add(optimistic)
-
-                            scope.launch {
-                                try {
-                                    val request = SendMessageRequest(content = text)
-                                    val response = chatService.sendMessage(
-                                        conversationId = conversation!!.id,
-                                        request = request,
-                                    )
-                                    messages.add(response.message)
-                                    if (response.toolCalls.isNotEmpty()) {
-                                        toolCalls = response.toolCalls
-                                    }
-                                } catch (e: Exception) {
-                                    messages.remove(optimistic)
-                                    inputText = text
-                                }
-                                isSending = false
-                            }
-                        }
-                    },
+                    onSend = { sendText(inputText) },
                     onImagePicker = {
                         // Placeholder: integrate with ActivityResultContracts for camera/gallery
                     },
@@ -433,6 +455,45 @@ private fun ToolCallCards(toolCalls: List<JsonObject>) {
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickReplyChips(
+    quickReplies: List<QuickReply>,
+    enabled: Boolean,
+    onSelect: (QuickReply) -> Unit,
+) {
+    val scrollState = rememberScrollState()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(scrollState)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        quickReplies.forEach { reply ->
+            Surface(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(18.dp))
+                    .border(
+                        width = 1.dp,
+                        color = BrandRed,
+                        shape = RoundedCornerShape(18.dp),
+                    )
+                    .clickable(enabled = enabled) { onSelect(reply) },
+                shape = RoundedCornerShape(18.dp),
+                color = BrandRedLight,
+            ) {
+                Text(
+                    text = reply.label,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    color = BrandRed,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
             }
         }
     }

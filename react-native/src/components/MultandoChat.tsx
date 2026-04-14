@@ -20,6 +20,7 @@ import {
   ChatMessage,
   Conversation,
   ChatResponse,
+  QuickReply,
   SendMessageRequest,
 } from '../models/conversation';
 
@@ -51,6 +52,7 @@ export function MultandoChat({
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toolCalls, setToolCalls] = useState<Record<string, unknown>[]>([]);
+  const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
 
   const flatListRef = useRef<FlatList<ChatMessage>>(null);
 
@@ -76,56 +78,74 @@ export function MultandoChat({
     }
   }, [chatService]);
 
-  const handleSend = useCallback(async () => {
-    const text = inputText.trim();
-    if (!text || !conversation || isSending) return;
+  const sendText = useCallback(
+    async (rawText: string) => {
+      const text = rawText.trim();
+      if (!text || !conversation || isSending) return;
 
-    setInputText('');
-    setIsSending(true);
-    setToolCalls([]);
+      setInputText('');
+      setIsSending(true);
+      setToolCalls([]);
+      setQuickReplies([]);
 
-    // Optimistically add the user message
-    const optimisticMsg: ChatMessage = {
-      id: Date.now(),
-      conversationId: conversation.id,
-      direction: 'outbound',
-      content: text,
-      messageType: 'text',
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, optimisticMsg]);
+      // Optimistically add the user message
+      const optimisticMsg: ChatMessage = {
+        id: Date.now(),
+        conversationId: conversation.id,
+        direction: 'outbound',
+        content: text,
+        messageType: 'text',
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, optimisticMsg]);
 
-    try {
-      const request: SendMessageRequest = { content: text };
-      const response: ChatResponse = await chatService.sendMessage(
-        conversation.id,
-        request,
-      );
-
-      // Replace optimistic message with server version and add AI response
-      setMessages((prev) => {
-        const withoutOptimistic = prev.filter(
-          (m) => m.id !== optimisticMsg.id,
+      try {
+        const request: SendMessageRequest = { content: text };
+        const response: ChatResponse = await chatService.sendMessage(
+          conversation.id,
+          request,
         );
-        // The server returns the AI message; we also need the user message from
-        // a fresh fetch or we trust the optimistic one was correct.
-        return [...withoutOptimistic, optimisticMsg, response.message];
-      });
 
-      if (response.toolCalls && response.toolCalls.length > 0) {
-        setToolCalls(response.toolCalls);
+        // Replace optimistic message with server version and add AI response
+        setMessages((prev) => {
+          const withoutOptimistic = prev.filter(
+            (m) => m.id !== optimisticMsg.id,
+          );
+          // The server returns the AI message; we also need the user message from
+          // a fresh fetch or we trust the optimistic one was correct.
+          return [...withoutOptimistic, optimisticMsg, response.message];
+        });
+
+        if (response.toolCalls && response.toolCalls.length > 0) {
+          setToolCalls(response.toolCalls);
+        }
+        if (response.quickReplies && response.quickReplies.length > 0) {
+          setQuickReplies(response.quickReplies);
+        }
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Failed to send message';
+        Alert.alert('Error', message);
+        // Remove optimistic message on failure
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
+        setInputText(text);
+      } finally {
+        setIsSending(false);
       }
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to send message';
-      Alert.alert('Error', message);
-      // Remove optimistic message on failure
-      setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
-      setInputText(text);
-    } finally {
-      setIsSending(false);
-    }
-  }, [inputText, conversation, isSending, chatService]);
+    },
+    [conversation, isSending, chatService],
+  );
+
+  const handleSend = useCallback(async () => {
+    await sendText(inputText);
+  }, [inputText, sendText]);
+
+  const handleQuickReply = useCallback(
+    (reply: QuickReply) => {
+      sendText(reply.value);
+    },
+    [sendText],
+  );
 
   const handleImagePicker = useCallback(() => {
     // Placeholder: In a real implementation, use react-native-image-picker
@@ -282,6 +302,22 @@ export function MultandoChat({
         </View>
       )}
 
+      {/* Quick replies */}
+      {quickReplies.length > 0 && !isSending && (
+        <View style={styles.quickRepliesContainer}>
+          {quickReplies.map((reply, index) => (
+            <TouchableOpacity
+              key={`${index}-${reply.value}`}
+              style={styles.quickReplyChip}
+              onPress={() => handleQuickReply(reply)}
+              disabled={isSending}
+            >
+              <Text style={styles.quickReplyText}>{reply.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
       {/* Input bar */}
       <View style={styles.inputBar}>
         <TouchableOpacity
@@ -365,6 +401,9 @@ interface Styles {
   toolCallCard: ViewStyle;
   toolCallLabel: TextStyle;
   toolCallContent: TextStyle;
+  quickRepliesContainer: ViewStyle;
+  quickReplyChip: ViewStyle;
+  quickReplyText: TextStyle;
   typingContainer: ViewStyle;
   typingBubble: ViewStyle;
   typingDots: ViewStyle;
@@ -543,6 +582,26 @@ const styles = StyleSheet.create<Styles>({
   toolCallContent: {
     fontSize: 13,
     color: '#333333',
+  },
+  quickRepliesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+    gap: 8,
+  },
+  quickReplyChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: BRAND_RED,
+    backgroundColor: BRAND_RED_LIGHT,
+  },
+  quickReplyText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: BRAND_RED,
   },
   typingContainer: {
     paddingHorizontal: 12,

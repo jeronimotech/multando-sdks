@@ -41,7 +41,16 @@ data class SendMessageRequest(
 )
 
 @Serializable
+data class QuickReply(
+    /** Display text for the button. */
+    val label: String,
+    /** Text to send when the button is tapped. */
+    val value: String
+)
+
+@Serializable
 data class ChatResponse(
     val message: ChatMessage,
-    @SerialName("tool_calls") val toolCalls: List<JsonObject> = emptyList()
+    @SerialName("tool_calls") val toolCalls: List<JsonObject> = emptyList(),
+    @SerialName("quick_replies") val quickReplies: List<QuickReply> = emptyList()
 )
