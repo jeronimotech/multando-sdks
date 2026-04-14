@@ -134,7 +134,7 @@ public struct ChatResponse: Codable, Sendable {
 }
 
 /// A type-erased Codable wrapper for handling arbitrary JSON values in tool calls.
-public struct AnyCodable: Codable, Sendable {
+public struct AnyCodable: Codable, @unchecked Sendable {
     public let value: Any?
 
     public init(_ value: Any?) {

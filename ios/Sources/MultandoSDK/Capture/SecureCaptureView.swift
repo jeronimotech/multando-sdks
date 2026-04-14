@@ -6,11 +6,13 @@
 //  CoreLocation, CoreMotion, and PhotosUI (gallery picker).
 //
 
+#if canImport(UIKit)
 import AVFoundation
 import CoreLocation
 import CoreMotion
 import PhotosUI
 import SwiftUI
+import UIKit
 
 // MARK: - SecureCaptureView
 
@@ -604,3 +606,4 @@ struct CameraPreviewRepresentable: UIViewRepresentable {
         }
     }
 }
+#endif

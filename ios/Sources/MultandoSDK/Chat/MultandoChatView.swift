@@ -174,7 +174,7 @@ public struct MultandoChatView: View {
     private var quickRepliesBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(Array(quickReplies.enumerated()), id: \.offset) { _, reply in
+                ForEach(quickReplies, id: \.self) { reply in
                     Button(action: { handleQuickReply(reply) }) {
                         Text(reply.label)
                             .font(.system(size: 14, weight: .semibold))

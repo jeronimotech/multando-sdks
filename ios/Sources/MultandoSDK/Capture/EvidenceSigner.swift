@@ -10,7 +10,9 @@
 import CommonCrypto
 import Foundation
 import Security
+#if canImport(UIKit)
 import UIKit
+#endif
 
 // MARK: - SecureEvidence
 
@@ -64,7 +66,11 @@ public final class EvidenceSigner {
             writeKeychain(tag: deviceKeyTag, value: rawKey)
         }
 
+        #if canImport(UIKit) && !os(watchOS)
         let installId = UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
+        #else
+        let installId = UUID().uuidString
+        #endif
         let material = rawKey + installId + serverSalt
         return sha256Hex(material)
     }

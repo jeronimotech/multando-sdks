@@ -189,7 +189,9 @@ public struct ReportFormView: View {
                     .foregroundColor(.secondary)
                 TextField("e.g. ABC-1234", text: $plateNumber)
                     .textFieldStyle(.roundedBorder)
+                    #if canImport(UIKit)
                     .autocapitalization(.allCharacters)
+                    #endif
                     .disableAutocorrection(true)
             }
 
