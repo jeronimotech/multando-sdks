@@ -156,18 +156,78 @@ class ChatResponse {
       };
 }
 
+/// Native action a quick-reply button can trigger.
+enum QuickReplyAction {
+  /// Send [QuickReply.value] as the user's next chat message.
+  sendText,
+
+  /// Ask the app to share the user's current location (GPS).
+  shareLocation,
+
+  /// Ask the app to open the camera and capture a photo.
+  takePhoto,
+
+  /// Ask the app to pick an image from the gallery.
+  pickImage,
+
+  /// Open [QuickReply.value] as an external URL.
+  openUrl,
+}
+
+QuickReplyAction _parseQuickReplyAction(dynamic raw) {
+  if (raw is! String) return QuickReplyAction.sendText;
+  switch (raw) {
+    case 'share_location':
+      return QuickReplyAction.shareLocation;
+    case 'take_photo':
+      return QuickReplyAction.takePhoto;
+    case 'pick_image':
+      return QuickReplyAction.pickImage;
+    case 'open_url':
+      return QuickReplyAction.openUrl;
+    case 'send_text':
+    default:
+      return QuickReplyAction.sendText;
+  }
+}
+
+String _quickReplyActionToWire(QuickReplyAction a) {
+  switch (a) {
+    case QuickReplyAction.shareLocation:
+      return 'share_location';
+    case QuickReplyAction.takePhoto:
+      return 'take_photo';
+    case QuickReplyAction.pickImage:
+      return 'pick_image';
+    case QuickReplyAction.openUrl:
+      return 'open_url';
+    case QuickReplyAction.sendText:
+      return 'send_text';
+  }
+}
+
 class QuickReply {
-  const QuickReply({required this.label, required this.value});
+  const QuickReply({
+    required this.label,
+    required this.value,
+    this.action = QuickReplyAction.sendText,
+  });
 
   factory QuickReply.fromJson(Map<String, dynamic> json) {
     return QuickReply(
       label: json['label'] as String,
       value: (json['value'] ?? json['label']) as String,
+      action: _parseQuickReplyAction(json['action']),
     );
   }
 
   final String label;
   final String value;
+  final QuickReplyAction action;
 
-  Map<String, dynamic> toJson() => {'label': label, 'value': value};
+  Map<String, dynamic> toJson() => {
+        'label': label,
+        'value': value,
+        'action': _quickReplyActionToWire(action),
+      };
 }
