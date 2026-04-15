@@ -14,6 +14,7 @@ import {
   TextStyle,
   ListRenderItemInfo,
   Image,
+  Linking,
 } from 'react-native';
 import { useMultando } from '../hooks/useMultando';
 import {
@@ -142,7 +143,51 @@ export function MultandoChat({
 
   const handleQuickReply = useCallback(
     (reply: QuickReply) => {
-      sendText(reply.value);
+      // Dispatch based on the server-provided action. Falls back to
+      // `send_text` when the field is missing or unknown (see
+      // parseQuickReplyAction in models/conversation).
+      switch (reply.action) {
+        case 'share_location': {
+          // TODO: integrate @react-native-community/geolocation or
+          // expo-location when added as a peer dep. For now, fall back to
+          // sending the value as text so the conversation still progresses.
+          console.warn(
+            '[MultandoChat] share_location action requested but no geolocation dep is installed; falling back to send_text.',
+          );
+          sendText(reply.value);
+          break;
+        }
+        case 'take_photo': {
+          // TODO: integrate react-native-image-picker / expo-image-picker
+          // with launchCamera. Fall back to text for now.
+          console.warn(
+            '[MultandoChat] take_photo action requested but no image-picker dep is installed; falling back to send_text.',
+          );
+          sendText(reply.value);
+          break;
+        }
+        case 'pick_image': {
+          // TODO: integrate react-native-image-picker / expo-image-picker
+          // with launchImageLibrary. Fall back to text for now.
+          console.warn(
+            '[MultandoChat] pick_image action requested but no image-picker dep is installed; falling back to send_text.',
+          );
+          sendText(reply.value);
+          break;
+        }
+        case 'open_url': {
+          Linking.openURL(reply.value).catch((err) => {
+            const message =
+              err instanceof Error ? err.message : 'Failed to open URL';
+            Alert.alert('Cannot open link', message);
+          });
+          break;
+        }
+        case 'send_text':
+        default:
+          sendText(reply.value);
+          break;
+      }
     },
     [sendText],
   );

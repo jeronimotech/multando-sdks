@@ -1,5 +1,13 @@
 package com.multando.sdk.chat
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -82,6 +91,7 @@ fun MultandoChatScreen(
 ) {
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+    val context = LocalContext.current
 
     var conversation by remember { mutableStateOf<Conversation?>(null) }
     val messages = remember { mutableStateListOf<ChatMessage>() }
@@ -219,12 +229,94 @@ fun MultandoChatScreen(
                     }
                 }
 
+                // Activity result launchers for TAKE_PHOTO / PICK_IMAGE quick-reply actions.
+                // Both fall back to sending the reply's value as text so the conversation
+                // still advances even before a full upload pipeline is wired here.
+                val takePhotoLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.TakePicturePreview()
+                ) { bitmap ->
+                    Log.d("MultandoChat", "TakePicturePreview result: ${bitmap != null}")
+                    // TODO: upload bitmap via chatService.sendMessage once wired on this screen.
+                }
+                val pickImageLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.GetContent()
+                ) { uri: Uri? ->
+                    Log.d("MultandoChat", "GetContent result: $uri")
+                    // TODO: upload selected image via chatService.sendMessage once wired on this screen.
+                }
+                val locationPermissionLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission()
+                ) { granted ->
+                    if (granted) {
+                        requestCurrentLocation(context) { lat, lng ->
+                            sendText("Lat: $lat, Lng: $lng")
+                        }
+                    } else {
+                        Log.w("MultandoChat", "Location permission denied; falling back to text.")
+                        sendText("(location unavailable)")
+                    }
+                }
+
+                // Dispatcher invoked when a quick-reply chip is tapped.
+                val onQuickReply: (QuickReply) -> Unit = { reply ->
+                    when (reply.action) {
+                        QuickReplyAction.SEND_TEXT -> sendText(reply.value)
+
+                        QuickReplyAction.OPEN_URL -> {
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(reply.value))
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                Log.e("MultandoChat", "Failed to open URL: ${reply.value}", e)
+                                sendText(reply.value)
+                            }
+                        }
+
+                        QuickReplyAction.SHARE_LOCATION -> {
+                            val fine = ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.ACCESS_FINE_LOCATION
+                            ) == PackageManager.PERMISSION_GRANTED
+                            val coarse = ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.ACCESS_COARSE_LOCATION
+                            ) == PackageManager.PERMISSION_GRANTED
+                            if (fine || coarse) {
+                                requestCurrentLocation(context) { lat, lng ->
+                                    sendText("Lat: $lat, Lng: $lng")
+                                }
+                            } else {
+                                locationPermissionLauncher.launch(
+                                    Manifest.permission.ACCESS_FINE_LOCATION
+                                )
+                            }
+                        }
+
+                        QuickReplyAction.TAKE_PHOTO -> {
+                            try {
+                                takePhotoLauncher.launch(null)
+                            } catch (e: Exception) {
+                                Log.e("MultandoChat", "TODO: camera not wired", e)
+                                sendText(reply.value)
+                            }
+                        }
+
+                        QuickReplyAction.PICK_IMAGE -> {
+                            try {
+                                pickImageLauncher.launch("image/*")
+                            } catch (e: Exception) {
+                                Log.e("MultandoChat", "TODO: gallery not wired", e)
+                                sendText(reply.value)
+                            }
+                        }
+                    }
+                }
+
                 // Quick replies chips
                 if (quickReplies.isNotEmpty() && !isSending) {
                     QuickReplyChips(
                         quickReplies = quickReplies,
                         enabled = !isSending,
-                        onSelect = { reply -> sendText(reply.value) },
+                        onSelect = onQuickReply,
                     )
                 }
 
@@ -569,6 +661,36 @@ private fun formatTime(isoString: String): String {
         formatter.format(date)
     } catch (e: Exception) {
         ""
+    }
+}
+
+/**
+ * Best-effort current-location lookup using FusedLocationProviderClient.
+ *
+ * Callers are responsible for permission gating before invoking this helper.
+ * If the location provider throws or returns null, [onResult] is simply never
+ * invoked; the UI layer should provide a timeout/fallback if needed.
+ */
+@SuppressWarnings("MissingPermission")
+private fun requestCurrentLocation(
+    context: android.content.Context,
+    onResult: (Double, Double) -> Unit,
+) {
+    try {
+        val client = com.google.android.gms.location.LocationServices
+            .getFusedLocationProviderClient(context)
+        client.lastLocation
+            .addOnSuccessListener { loc ->
+                if (loc != null) onResult(loc.latitude, loc.longitude)
+                else Log.w("MultandoChat", "FusedLocation returned null; no fallback.")
+            }
+            .addOnFailureListener { e ->
+                Log.e("MultandoChat", "FusedLocation failed", e)
+            }
+    } catch (e: SecurityException) {
+        Log.e("MultandoChat", "Missing location permission", e)
+    } catch (e: Exception) {
+        Log.e("MultandoChat", "Location lookup error", e)
     }
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "@multando/react-native-sdk",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Official React Native SDK for the Multando traffic violation reporting platform. Report infractions, earn MULTA tokens, secure evidence capture.",
   "author": "Jeronimo Tech <dev@jeronimotech.com>",
   "license": "MIT",

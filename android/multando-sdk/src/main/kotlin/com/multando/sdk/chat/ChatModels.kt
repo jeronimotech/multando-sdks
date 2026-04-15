@@ -40,12 +40,41 @@ data class SendMessageRequest(
     @SerialName("capture_method") val captureMethod: String? = null
 )
 
+/**
+ * Native action a quick-reply button can trigger.
+ *
+ * The wire format is snake_case. Unknown values deserialize to [SEND_TEXT]
+ * because the consuming [kotlinx.serialization.json.Json] is configured with
+ * `coerceInputValues = true` + `ignoreUnknownKeys = true` in
+ * [com.multando.sdk.core.HttpClient], so clients are forward-compatible with
+ * backend actions added after this SDK version was released.
+ */
+@Serializable
+enum class QuickReplyAction {
+    /** Send [QuickReply.value] as the user's next chat message. */
+    @SerialName("send_text") SEND_TEXT,
+
+    /** Ask the app to share the user's current location (GPS). */
+    @SerialName("share_location") SHARE_LOCATION,
+
+    /** Ask the app to open the camera and capture a photo. */
+    @SerialName("take_photo") TAKE_PHOTO,
+
+    /** Ask the app to pick an image from the gallery. */
+    @SerialName("pick_image") PICK_IMAGE,
+
+    /** Open [QuickReply.value] as an external URL. */
+    @SerialName("open_url") OPEN_URL,
+}
+
 @Serializable
 data class QuickReply(
     /** Display text for the button. */
     val label: String,
-    /** Text to send when the button is tapped. */
-    val value: String
+    /** Text to send when the button is tapped, or a URL when [action] is [QuickReplyAction.OPEN_URL]. */
+    val value: String,
+    /** Native action to perform on tap. Defaults to [QuickReplyAction.SEND_TEXT] for missing/unknown values. */
+    val action: QuickReplyAction = QuickReplyAction.SEND_TEXT
 )
 
 @Serializable

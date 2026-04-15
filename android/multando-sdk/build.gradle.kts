@@ -63,6 +63,12 @@ dependencies {
     // AndroidX core
     implementation("androidx.core:core-ktx:1.12.0")
 
+    // Activity + ActivityResult APIs (used by MultandoChatScreen quick-reply dispatcher)
+    implementation("androidx.activity:activity-compose:1.8.2")
+
+    // FusedLocationProviderClient (used by SecureCaptureFragment + chat SHARE_LOCATION quick reply)
+    implementation("com.google.android.gms:play-services-location:21.1.0")
+
     // Compose (UI helpers bundled with the SDK)
     implementation(platform("androidx.compose:compose-bom:2024.01.00"))
     implementation("androidx.compose.ui:ui")

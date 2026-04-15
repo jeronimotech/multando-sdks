@@ -90,16 +90,63 @@ public struct SendMessageRequest: Codable, Sendable {
     }
 }
 
+/// Native action a quick-reply button can trigger.
+public enum QuickReplyAction: String, Codable, Sendable, Hashable {
+    /// Send `QuickReply.value` as the user's next chat message.
+    case sendText = "send_text"
+    /// Ask the app to share the user's current location (GPS).
+    case shareLocation = "share_location"
+    /// Ask the app to open the camera and capture a photo.
+    case takePhoto = "take_photo"
+    /// Ask the app to pick an image from the gallery.
+    case pickImage = "pick_image"
+    /// Open `QuickReply.value` as an external URL.
+    case openUrl = "open_url"
+}
+
 /// A quick-reply suggestion that the UI can render as a tappable chip/button.
 public struct QuickReply: Codable, Sendable, Hashable {
     /// Display text for the button.
     public let label: String
     /// Text to send when the button is tapped.
     public let value: String
+    /// Native action to perform when the button is tapped. Defaults to `.sendText`.
+    public let action: QuickReplyAction
 
-    public init(label: String, value: String) {
+    public init(
+        label: String,
+        value: String,
+        action: QuickReplyAction = .sendText
+    ) {
         self.label = label
         self.value = value
+        self.action = action
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case label
+        case value
+        case action
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.label = try container.decode(String.self, forKey: .label)
+        self.value = (try? container.decode(String.self, forKey: .value)) ?? self.label
+        // Tolerate missing or unknown action values by defaulting to .sendText.
+        if let raw = try? container.decodeIfPresent(String.self, forKey: .action),
+           let parsed = QuickReplyAction(rawValue: raw) {
+            self.action = parsed
+        } else {
+            self.action = .sendText
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(label, forKey: .label)
+        try container.encode(value, forKey: .value)
+        try container.encode(action, forKey: .action)
     }
 }
 

@@ -5,6 +5,7 @@ import {
   ChatMessage,
   SendMessageRequest,
   ChatResponse,
+  normalizeChatResponse,
 } from '../models/conversation';
 
 export interface ConversationListParams {
@@ -55,7 +56,7 @@ export class ChatService {
       `/conversations/${conversationId}/messages`,
       request,
     );
-    return response.data;
+    return normalizeChatResponse(response.data);
   }
 
   /** Delete a conversation. */

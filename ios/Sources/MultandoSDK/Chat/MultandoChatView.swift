@@ -1,4 +1,8 @@
 import SwiftUI
+import CoreLocation
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// A drop-in SwiftUI chat view for the Multando AI assistant.
 ///
@@ -22,6 +26,7 @@ public struct MultandoChatView: View {
     @State private var error: String?
     @State private var toolCalls: [[String: AnyCodable]] = []
     @State private var quickReplies: [QuickReply] = []
+    @StateObject private var locationFetcher = QuickReplyLocationFetcher()
 
     private static let brandRed = Color(red: 0.902, green: 0.224, blue: 0.275)
     private static let brandRedLight = Color(red: 0.992, green: 0.929, blue: 0.937)
@@ -321,7 +326,35 @@ public struct MultandoChatView: View {
     }
 
     private func handleQuickReply(_ reply: QuickReply) {
-        Task { await sendText(reply.value) }
+        switch reply.action {
+        case .sendText:
+            Task { await sendText(reply.value) }
+        case .shareLocation:
+            locationFetcher.fetchOne { [weak locationFetcher] result in
+                _ = locationFetcher
+                switch result {
+                case .success(let coord):
+                    let formatted = String(
+                        format: "My location: %.6f, %.6f",
+                        coord.latitude,
+                        coord.longitude
+                    )
+                    Task { await sendText(formatted) }
+                case .failure:
+                    // Fall back to sending the raw value so the server still sees a response.
+                    Task { await sendText(reply.value) }
+                }
+            }
+        case .takePhoto, .pickImage:
+            // Reuse the existing image picker hook. A fully wired picker is out of scope here.
+            handleImagePicker()
+        case .openUrl:
+            if let url = URL(string: reply.value) {
+                #if canImport(UIKit)
+                UIApplication.shared.open(url)
+                #endif
+            }
+        }
     }
 
     private func sendText(_ rawText: String) async {
@@ -434,5 +467,71 @@ private struct ChatBubble: View {
         let timeFormatter = DateFormatter()
         timeFormatter.dateFormat = "HH:mm"
         return timeFormatter.string(from: date)
+    }
+}
+
+// MARK: - Quick Reply Location Fetcher
+
+/// Fetches a single CLLocation on demand for `QuickReplyAction.shareLocation`.
+@available(iOS 16.0, *)
+final class QuickReplyLocationFetcher: NSObject, ObservableObject, CLLocationManagerDelegate {
+    enum LocationError: Error {
+        case denied
+        case failed(Error)
+        case unavailable
+    }
+
+    private let manager = CLLocationManager()
+    private var completion: ((Result<CLLocationCoordinate2D, LocationError>) -> Void)?
+
+    override init() {
+        super.init()
+        manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyBest
+    }
+
+    func fetchOne(_ completion: @escaping (Result<CLLocationCoordinate2D, LocationError>) -> Void) {
+        self.completion = completion
+        let status = manager.authorizationStatus
+        switch status {
+        case .notDetermined:
+            manager.requestWhenInUseAuthorization()
+        case .denied, .restricted:
+            finish(.failure(.denied))
+        case .authorizedWhenInUse, .authorizedAlways:
+            manager.requestLocation()
+        @unknown default:
+            finish(.failure(.unavailable))
+        }
+    }
+
+    private func finish(_ result: Result<CLLocationCoordinate2D, LocationError>) {
+        let cb = completion
+        completion = nil
+        DispatchQueue.main.async { cb?(result) }
+    }
+
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        guard completion != nil else { return }
+        switch manager.authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            manager.requestLocation()
+        case .denied, .restricted:
+            finish(.failure(.denied))
+        default:
+            break
+        }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let loc = locations.last else {
+            finish(.failure(.unavailable))
+            return
+        }
+        finish(.success(loc.coordinate))
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        finish(.failure(.failed(error)))
     }
 }

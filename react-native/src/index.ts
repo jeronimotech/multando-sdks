@@ -120,6 +120,13 @@ export type {
   SendMessageRequest,
   ChatResponse,
   QuickReply,
+  QuickReplyAction,
+} from './models/conversation';
+export {
+  parseQuickReplyAction,
+  quickReplyFromJson,
+  quickReplyToJson,
+  normalizeChatResponse,
 } from './models/conversation';
 
 // Services - Chat
