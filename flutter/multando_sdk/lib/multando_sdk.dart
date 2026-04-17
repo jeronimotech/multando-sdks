@@ -23,6 +23,7 @@ export 'src/capture/evidence_signer.dart';
 export 'src/capture/anti_fraud.dart';
 
 // Widgets
+export 'src/widgets/multando_chat.dart';
 export 'src/widgets/multando_info_button.dart';
 export 'src/widgets/multando_provider.dart';
 export 'src/widgets/report_card.dart';
