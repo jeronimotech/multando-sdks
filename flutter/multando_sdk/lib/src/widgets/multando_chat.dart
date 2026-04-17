@@ -154,10 +154,32 @@ class _MultandoChatState extends State<MultandoChat> {
       setState(() => _messages = [..._messages, userMsg]);
       _scrollToBottom();
 
+      // If image provided, try to get current location for evidence metadata.
+      double? imgLat;
+      double? imgLon;
+      String? imgTimestamp;
+      if (imageBase64 != null && widget.onShareLocation != null) {
+        try {
+          final loc = await widget.onShareLocation!();
+          if (loc != null && loc.contains(',')) {
+            final parts = loc.split(',');
+            imgLat = double.tryParse(parts[0].trim());
+            imgLon = double.tryParse(parts[1].trim());
+          }
+        } catch (_) {
+          // Location unavailable — evidence will be unverified
+        }
+        imgTimestamp = DateTime.now().toUtc().toIso8601String();
+      }
+
       // Send to API.
       final request = SendMessageRequest(
         content: content.isNotEmpty ? content : 'Analyze this image',
         imageBase64: imageBase64,
+        imageLatitude: imgLat,
+        imageLongitude: imgLon,
+        imageTimestamp: imgTimestamp,
+        captureMethod: imageBase64 != null ? 'camera' : null,
       );
       final response = await widget.client.chat.sendMessage(conv.id, request);
 
