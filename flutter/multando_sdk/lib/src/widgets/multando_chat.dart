@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../core/multando_client.dart';
 import '../models/conversation.dart';
@@ -551,14 +552,73 @@ class _MultandoChatState extends State<MultandoChat> {
                   bottomRight: Radius.circular(isUser ? 4 : 18),
                 ),
               ),
-              child: Text(
-                message.content ?? '',
-                style: TextStyle(
-                  color: isUser ? Colors.white : Colors.grey.shade800,
-                  fontSize: 15,
-                  height: 1.4,
-                ),
-              ),
+              child: isUser
+                  ? Text(
+                      message.content ?? '',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        height: 1.4,
+                      ),
+                    )
+                  : MarkdownBody(
+                      data: message.content ?? '',
+                      shrinkWrap: true,
+                      styleSheet: MarkdownStyleSheet(
+                        p: TextStyle(
+                          color: Colors.grey.shade800,
+                          fontSize: 15,
+                          height: 1.4,
+                        ),
+                        strong: TextStyle(
+                          color: Colors.grey.shade900,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                        listBullet: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 15,
+                        ),
+                        h1: TextStyle(
+                          color: Colors.grey.shade900,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        h2: TextStyle(
+                          color: Colors.grey.shade900,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        h3: TextStyle(
+                          color: Colors.grey.shade900,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        code: TextStyle(
+                          color: primary,
+                          backgroundColor: Colors.grey.shade200,
+                          fontSize: 14,
+                        ),
+                        tableHead: TextStyle(
+                          color: Colors.grey.shade900,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                        tableBody: TextStyle(
+                          color: Colors.grey.shade700,
+                          fontSize: 13,
+                        ),
+                        tableBorder: TableBorder.all(
+                          color: Colors.grey.shade300,
+                          width: 0.5,
+                        ),
+                        tableCellsPadding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        blockSpacing: 8,
+                      ),
+                    ),
             ),
           ),
           if (isUser) const SizedBox(width: 8),
