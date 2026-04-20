@@ -480,6 +480,28 @@ class _MultandoChatState extends State<MultandoChat> {
 
   // --------------- Sub-widgets ---------------
 
+  /// Multando bot avatar — uses the bundled logo asset.
+  Widget _botAvatar({double size = 28}) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: widget.primaryColor,
+        shape: BoxShape.circle,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: EdgeInsets.all(size * 0.15),
+        child: Image.asset(
+          'packages/multando_sdk/assets/multando_logo.png',
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) =>
+              Icon(Icons.smart_toy, size: size * 0.57, color: Colors.white),
+        ),
+      ),
+    );
+  }
+
   Widget _buildWelcome(Color primary, Color textColor) {
     return SingleChildScrollView(
       child: Padding(
@@ -487,15 +509,7 @@ class _MultandoChatState extends State<MultandoChat> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: primary.withAlpha(25),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.smart_toy_outlined, size: 40, color: primary),
-            ),
+            _botAvatar(size: 80),
             const SizedBox(height: 24),
             Text(
               widget.welcomeTitle,
@@ -550,15 +564,7 @@ class _MultandoChatState extends State<MultandoChat> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isUser) ...[
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: primary,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.smart_toy, size: 16, color: Colors.white),
-            ),
+            _botAvatar(),
             const SizedBox(width: 8),
           ],
           Flexible(
@@ -654,15 +660,7 @@ class _MultandoChatState extends State<MultandoChat> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: primary,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.smart_toy, size: 16, color: Colors.white),
-          ),
+          _botAvatar(),
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

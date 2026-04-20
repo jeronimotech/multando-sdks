@@ -46,6 +46,10 @@ dependencies:
   crypto: ^3.0.0
   flutter_markdown: ^0.7.0
 
+flutter:
+  assets:
+    - assets/multando_logo.png
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
