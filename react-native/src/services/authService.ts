@@ -3,6 +3,7 @@ import { AuthManager } from '../core/authManager';
 import {
   RegisterRequest,
   LoginRequest,
+  SocialLoginRequest,
   TokenResponse,
   WalletLinkRequest,
 } from '../models/auth';
@@ -41,6 +42,19 @@ export class AuthService {
     const response = await this.http.post<TokenResponse>(
       '/auth/login',
       request,
+    );
+    await this.authManager.setTokens(response.data);
+
+    const profile = await this.getMe();
+    return profile;
+  }
+
+  async socialLogin(request: SocialLoginRequest): Promise<UserProfile> {
+    this.logger.info(`Social login with ${request.provider}`);
+    const { provider, ...body } = request;
+    const response = await this.http.post<TokenResponse>(
+      `/auth/oauth/${provider}`,
+      body,
     );
     await this.authManager.setTokens(response.data);
 

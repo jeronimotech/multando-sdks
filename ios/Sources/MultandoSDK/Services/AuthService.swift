@@ -43,6 +43,20 @@ public final class AuthService: Sendable {
         try await login(LoginRequest(email: email, password: password))
     }
 
+    /// Log in via a social/OAuth provider (Google, Apple, etc.).
+    @discardableResult
+    public func socialLogin(provider: String, idToken: String? = nil, code: String? = nil, redirectUri: String? = nil) async throws -> TokenResponse {
+        let body = SocialLoginRequest(idToken: idToken, code: code, redirectUri: redirectUri)
+        let response: TokenResponse = try await httpClient.request(
+            method: "POST",
+            path: "/api/v1/auth/oauth/\(provider)",
+            body: body,
+            authenticated: false
+        )
+        authManager.store(tokens: response)
+        return response
+    }
+
     /// Refresh the current access token.
     @discardableResult
     public func refresh() async throws -> TokenResponse {

@@ -12,6 +12,7 @@ export { Logger } from './core/logger';
 export type {
   RegisterRequest,
   LoginRequest,
+  SocialLoginRequest,
   TokenResponse,
   RefreshRequest,
   WalletLinkRequest,

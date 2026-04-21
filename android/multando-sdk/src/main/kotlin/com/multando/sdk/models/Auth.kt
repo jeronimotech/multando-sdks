@@ -30,6 +30,13 @@ data class RefreshRequest(
 )
 
 @Serializable
+data class SocialLoginRequest(
+    @SerialName("id_token") val idToken: String? = null,
+    val code: String? = null,
+    @SerialName("redirect_uri") val redirectUri: String? = null
+)
+
+@Serializable
 data class WalletLinkRequest(
     @SerialName("wallet_address") val walletAddress: String,
     val signature: String

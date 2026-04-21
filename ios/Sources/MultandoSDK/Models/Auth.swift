@@ -58,6 +58,25 @@ public struct RefreshRequest: Codable, Sendable {
     }
 }
 
+/// Payload for social/OAuth login.
+public struct SocialLoginRequest: Codable, Sendable {
+    public let idToken: String?
+    public let code: String?
+    public let redirectUri: String?
+
+    public init(idToken: String? = nil, code: String? = nil, redirectUri: String? = nil) {
+        self.idToken = idToken
+        self.code = code
+        self.redirectUri = redirectUri
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case idToken = "id_token"
+        case code
+        case redirectUri = "redirect_uri"
+    }
+}
+
 /// Payload for linking a blockchain wallet.
 public struct WalletLinkRequest: Codable, Sendable {
     public let walletAddress: String

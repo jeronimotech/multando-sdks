@@ -21,6 +21,13 @@ export interface RefreshRequest {
   refreshToken: string;
 }
 
+export interface SocialLoginRequest {
+  provider: string;
+  idToken?: string;
+  code?: string;
+  redirectUri?: string;
+}
+
 export interface WalletLinkRequest {
   walletAddress: string;
   signature: string;

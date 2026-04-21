@@ -40,6 +40,24 @@ class AuthService internal constructor(
     suspend fun login(email: String, password: String): TokenResponse =
         login(LoginRequest(email, password))
 
+    /** Log in via a social/OAuth provider (Google, Apple, etc.). */
+    suspend fun socialLogin(
+        provider: String,
+        idToken: String? = null,
+        code: String? = null,
+        redirectUri: String? = null
+    ): TokenResponse {
+        val body = SocialLoginRequest(idToken = idToken, code = code, redirectUri = redirectUri)
+        val response = httpClient.request<TokenResponse>(
+            method = "POST",
+            path = "/api/v1/auth/oauth/$provider",
+            body = body,
+            authenticated = false
+        )
+        authManager.store(response)
+        return response
+    }
+
     /** Refresh the current access token. */
     suspend fun refresh(): TokenResponse {
         val token = authManager.refreshToken
