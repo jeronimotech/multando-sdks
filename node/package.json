@@ -1,0 +1,33 @@
+{
+  "name": "@multando/node",
+  "version": "0.1.0",
+  "description": "Official Node.js client for the Multando API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "BSL-1.1",
+  "keywords": [
+    "multando",
+    "traffic",
+    "violations",
+    "api",
+    "client"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jeronimo-sas/multando-sdks.git",
+    "directory": "node"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}

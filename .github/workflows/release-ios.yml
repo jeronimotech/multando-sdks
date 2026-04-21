@@ -1,0 +1,43 @@
+# Release iOS SDK via GitHub Release (SPM tag-based distribution)
+# Trigger: push tag ios-v* (e.g. ios-v1.2.0)
+# Required secrets: none (GITHUB_TOKEN is auto-provided)
+
+name: Release iOS SDK
+
+on:
+  push:
+    tags:
+      - 'ios-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build, test, and create GitHub Release
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: swift build
+
+      - name: Run tests
+        run: swift test
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#ios-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}" \
+            --title "iOS SDK ${{ steps.version.outputs.version }}" \
+            --generate-notes

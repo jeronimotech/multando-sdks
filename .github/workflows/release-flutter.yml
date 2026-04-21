@@ -1,0 +1,46 @@
+# Release Flutter SDK to pub.dev
+# Trigger: push tag flutter-v* (e.g. flutter-v0.1.3)
+# Required secrets: PUB_DEV_CREDENTIALS (JSON token from pub.dev)
+
+name: Release Flutter SDK
+
+on:
+  push:
+    tags:
+      - 'flutter-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish to pub.dev
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: flutter/multando_sdk
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Validate package
+        run: flutter pub publish --dry-run
+
+      - name: Publish to pub.dev
+        run: flutter pub publish --force
+        env:
+          PUB_DEV_CREDENTIALS: ${{ secrets.PUB_DEV_CREDENTIALS }}

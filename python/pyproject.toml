@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "multando"
+version = "0.1.0"
+description = "Official Python client for the Multando API"
+requires-python = ">=3.9"
+dependencies = ["httpx>=0.25.0"]
+license = {text = "BSL-1.1"}
+authors = [{name = "Jeronimo SAS", email = "dev@multando.com"}]
+keywords = ["multando", "traffic", "api", "client"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://multando.com"
+Repository = "https://github.com/jeronimotech/multando-sdks"
+Documentation = "https://multando.com/developers"

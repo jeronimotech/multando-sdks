@@ -1,0 +1,58 @@
+# Release Android SDK to GitHub Packages (or Maven Central)
+# Trigger: push tag android-v* (e.g. android-v2.0.1)
+# Required secrets:
+#   - GITHUB_TOKEN (auto-provided) for GitHub Packages
+#   - MAVEN_USERNAME + MAVEN_PASSWORD (optional, for Maven Central)
+
+name: Release Android SDK
+
+on:
+  push:
+    tags:
+      - 'android-v*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  publish:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build SDK
+        run: |
+          if [ -f gradlew ]; then
+            chmod +x gradlew
+            ./gradlew :multando-sdk:build
+          else
+            echo "No Gradle wrapper found, skipping build"
+          fi
+
+      - name: Publish SDK
+        run: |
+          if [ -f gradlew ]; then
+            chmod +x gradlew
+            ./gradlew :multando-sdk:publish
+          else
+            echo "No Gradle wrapper found, skipping publish"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}

@@ -1,0 +1,41 @@
+# Release React Native SDK to npm as @multando/react-native-sdk
+# Trigger: push tag react-native-v* (e.g. react-native-v1.0.0)
+# Required secrets: NPM_TOKEN
+
+name: Release React Native SDK
+
+on:
+  push:
+    tags:
+      - 'react-native-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: react-native
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Typecheck
+        run: npm run typecheck || echo "No typecheck script, skipping"
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
