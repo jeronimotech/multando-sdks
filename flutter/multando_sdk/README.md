@@ -48,6 +48,40 @@ The built-in `ReportForm` widget already embeds it next to the first-step title.
 
 > **Developers integrating this SDK MUST surface these principles in their UI.** Failure to do so violates the Multando API Terms and may result in API-key revocation.
 
+## Connect Multando (OAuth)
+
+Let your users connect their Multando account to your app via OAuth 2.0. The user authorizes your app on multando.com, and you exchange the resulting code for an access token.
+
+```dart
+// 1. Build the authorize URL
+final url = client.auth.buildAuthorizeUrl(
+  redirectUri: 'myapp://multando-callback',
+);
+
+// 2. Open in browser (using url_launcher)
+await launchUrl(Uri.parse(url));
+
+// 3. Handle the callback in your app's deep link handler.
+//    Extract 'code' from the callback URL query parameters.
+
+// 4. Exchange the code for tokens
+final tokens = await client.auth.exchangeOAuthCode(
+  code: callbackCode,
+  redirectUri: 'myapp://multando-callback',
+);
+// Done! The client is now authenticated as the user.
+```
+
+You can customise the requested scopes:
+
+```dart
+final url = client.auth.buildAuthorizeUrl(
+  redirectUri: 'myapp://multando-callback',
+  scope: 'reports:read,balance:read',
+  state: 'my-csrf-token', // optional, recommended
+);
+```
+
 ## Handling rate limits
 
 ```dart

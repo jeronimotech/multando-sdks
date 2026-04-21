@@ -177,6 +177,7 @@ class MultandoClient {
     _authService = AuthService(
       httpClient: _httpClient,
       authManager: _authManager,
+      config: _config,
     );
     _reportService = ReportService(
       httpClient: _httpClient,
