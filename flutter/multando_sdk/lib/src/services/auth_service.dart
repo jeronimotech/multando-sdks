@@ -62,6 +62,29 @@ class AuthService {
     return UserProfile.fromJson(response.data!);
   }
 
+  /// Authenticate via social provider (Google, GitHub).
+  /// For Google Sign-In on mobile, pass the ID token.
+  /// For web OAuth flow, pass the authorization code + redirect URI.
+  Future<TokenResponse> socialLogin({
+    required String provider,
+    String? idToken,
+    String? code,
+    String? redirectUri,
+  }) async {
+    final response = await _http.post<Map<String, dynamic>>(
+      '/auth/oauth/$provider',
+      data: {
+        'provider': provider,
+        if (idToken != null) 'id_token': idToken,
+        if (code != null) 'code': code,
+        if (redirectUri != null) 'redirect_uri': redirectUri,
+      },
+    );
+    final tokens = TokenResponse.fromJson(response.data!);
+    await _authManager.saveTokens(tokens);
+    return tokens;
+  }
+
   /// Link a blockchain wallet to the user's account.
   Future<void> linkWallet(WalletLinkRequest request) async {
     await _http.post<Map<String, dynamic>>(
