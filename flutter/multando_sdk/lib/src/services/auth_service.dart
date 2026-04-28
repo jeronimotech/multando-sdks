@@ -118,11 +118,13 @@ class AuthService {
       'redirect_uri': redirectUri,
       'scope': scope,
       'response_type': 'code',
+      // Tell the consent page which API to call (important for sandbox)
+      'api_base': _config.apiBasePath,
       if (state != null) 'state': state,
     };
     final query = Uri(queryParameters: params).query;
     // The authorize URL lives on the web frontend, not the API.
-    return '${_config.baseUrl}/oauth/authorize?$query';
+    return '${_config.webUrl}/oauth/authorize?$query';
   }
 
   /// Exchange an OAuth authorization code for access tokens.

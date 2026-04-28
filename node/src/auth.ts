@@ -37,4 +37,44 @@ export class AuthService {
   async logout(): Promise<void> {
     await this.http.post<unknown>('/auth/logout');
   }
+
+  /** Exchange an OAuth authorization code for tokens. */
+  async exchangeOAuthCode(code: string, redirectUri: string): Promise<TokenResponse> {
+    return this.http.post<TokenResponse>('/oauth/token', {
+      grant_type: 'authorization_code',
+      code,
+      client_id: (this.http as any).apiKey ?? '',
+      redirect_uri: redirectUri,
+    });
+  }
+
+  /**
+   * Build the OAuth authorization URL for the Multando consent screen.
+   * Open this in a browser; the user authorizes and gets redirected
+   * back to `redirectUri` with a `code` query parameter.
+   */
+  buildAuthorizeUrl(options: {
+    redirectUri: string;
+    scope?: string;
+    state?: string;
+  }): string {
+    const { redirectUri, scope = 'reports:create,reports:read,infractions:read,balance:read', state } = options;
+    const baseUrl = (this.http as any).baseUrl as string ?? '';
+    // Derive web frontend URL from API URL
+    let webUrl: string;
+    if (baseUrl.includes('multando.com')) {
+      webUrl = 'https://www.multando.com';
+    } else {
+      webUrl = baseUrl.replace(/:\d+/, ':3000').replace(/\/api\/v1$/, '');
+    }
+    const params = new URLSearchParams({
+      client_id: (this.http as any).apiKey ?? '',
+      redirect_uri: redirectUri,
+      scope,
+      response_type: 'code',
+      api_base: baseUrl,
+    });
+    if (state) params.set('state', state);
+    return `${webUrl}/oauth/authorize?${params}`;
+  }
 }

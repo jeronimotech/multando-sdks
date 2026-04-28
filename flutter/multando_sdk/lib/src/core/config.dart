@@ -31,6 +31,21 @@ class MultandoConfig {
 
   /// The full base path for API v1 requests.
   String get apiBasePath => '$baseUrl/api/v1';
+
+  /// The web frontend URL for OAuth consent screens.
+  /// Derived from baseUrl: api.multando.com → www.multando.com,
+  /// sandbox-api.multando.com → www.multando.com (same frontend).
+  /// Override via [MultandoConfig] constructor if you self-host.
+  String get webUrl {
+    final uri = Uri.parse(baseUrl);
+    final host = uri.host;
+    // sandbox-api.multando.com or api.multando.com → www.multando.com
+    if (host.contains('multando.com')) {
+      return 'https://www.multando.com';
+    }
+    // Self-hosted: assume frontend is on the same host, port 3000
+    return '${uri.scheme}://${host.split(':').first}:3000';
+  }
 }
 
 /// Logging verbosity levels for the SDK.
