@@ -27,6 +27,10 @@ const report = await client.reports.create({
 console.log(`Report: ${report.short_id}`);
 ```
 
+## Report sources
+
+Reports returned by the API may originate from direct SDK/API calls, web and mobile apps, the WhatsApp Cloud API bot, or the Apify-based Twitter (X) hashtag scraper. The SDK surface is the same regardless of source.
+
 ## Services
 
 | Service | Methods |

@@ -9,6 +9,15 @@
 
 ---
 
+## Report sources
+
+Reports the SDK reads back from the API may originate from any of the following channels — the SDKs themselves don't change, but apps showing report feeds should expect mixed provenance:
+
+- Direct SDK calls (this repo)
+- Web and mobile apps
+- WhatsApp Cloud API conversations (bot-collected photo, GPS, plate, infraction)
+- Twitter (X) hashtag scraping via Apify (Claude-extracted plate/infraction/location, auto-created above confidence threshold and routed through community voting)
+
 ## SDK Overview
 
 | SDK | Language | Files | Install Command |

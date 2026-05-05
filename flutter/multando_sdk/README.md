@@ -21,6 +21,10 @@ final client = MultandoClient(
 await client.initialize();
 ```
 
+## Report sources
+
+Reports the API exposes through this SDK may originate from direct SDK calls, web and mobile apps, the WhatsApp Cloud API bot, or the Apify-based Twitter (X) hashtag scraper. The SDK contract is unchanged regardless of source — community voting and authority validation still apply.
+
 ## Responsible Reporting Principles
 
 Multando documents **public behavior in public spaces**, not individual people. Every integration of this SDK must surface these principles to end users:
